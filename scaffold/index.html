@@ -671,7 +671,7 @@ const STR=[
  {id:'s1w',  label:'APA Table 3 · S-1 เปียก กลุ่มไม้ 1 · Fb 1,430 · Fs 44 · E 1,500,000 psi', Fb:1430,Fs:44,E:1500000},
  {id:'s2d',  label:'APA Table 3 · S-2 แห้ง กลุ่มไม้ 1 · Fb 1,650 · Fs 53 · E 1,800,000 psi', Fb:1650,Fs:53,E:1800000},
 ];
-state.plyThk='apa34'; state.plyStr='s2w';
+state.plyThk='apa58'; state.plyStr='s2w';
 function applyPly(){
   const t=PLY.find(x=>x.id===state.plyThk);
   if(t){state.pS=+(t.S*IN3).toFixed(2);state.pI=+(t.I*IN4).toFixed(2);state.pIbQ=+(t.Q*IN2).toFixed(2);}
@@ -823,7 +823,7 @@ function kSVG(top,bot,sway){
   return `<svg viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${g}</svg>`;
 }
 
-Object.assign(state,{legMode:'manual',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});
+Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});
 function legCalc(){
   const sq=state.legShape==='square'&&state.legPipe==='custom';
   const nb=Math.max(0,Math.floor(state.legBr||0)),D=state.pOD/10,t=state.pT/10,L=state.legL/(nb+1),Fy=state.Fy,E=state.Es;let K=state.legK,kNote='';
@@ -1245,7 +1245,7 @@ function devSetDefaults(){const snap=JSON.parse(JSON.stringify(state));try{local
 function devClearDefaults(){try{localStorage.removeItem(DEV_KEY);}catch(e){}alert('ล้างค่าเริ่มต้นที่ตั้งไว้แล้ว ปุ่ม คืนค่าเริ่มต้น จะกลับไปใช้ค่าของโปรแกรม');}
 function load(){try{const raw=localStorage.getItem(LS_KEY),s=JSON.parse(raw||'null');if(s)Object.assign(state,s);else{const d=devSnap();if(d)Object.assign(state,d);}}catch(e){}}
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
-function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.plyThk='apa34';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'manual',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
+function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.plyThk='apa58';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
 
 const n=(x,d=2)=>Number.isFinite(x)?x.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const g=(x)=>{const s=Number(x);return Number.isFinite(s)?String(+s.toPrecision(7)):'?';};
@@ -1462,7 +1462,7 @@ function shareLoad(){const el=document.getElementById('shareIn'),o=shareDec(el&&
 load();
 if(state.supMode!=='none')state.supMode='check';
 try{if(/^#s=/.test(location.hash)){const _o=shareDec(location.hash);if(_o){shareApply(_o);history.replaceState(null,'',location.href.split('#')[0]);}}}catch(e){}
-state.mode='fix';if(!PLY.find(x=>x.id===state.plyThk)&&state.plyThk!=='custom')state.plyThk='apa34';if(!STR.find(x=>x.id===state.plyStr)&&state.plyStr!=='custom')state.plyStr='s2w';applyPly();
+state.mode='fix';if(!PLY.find(x=>x.id===state.plyThk)&&state.plyThk!=='custom')state.plyThk='apa58';if(!STR.find(x=>x.id===state.plyStr)&&state.plyStr!=='custom')state.plyStr='s2w';applyPly();
 scDefaults(true);scBuildPanel();
 $s('scsvg').classList.add('zoomed');
 applyLeg();
