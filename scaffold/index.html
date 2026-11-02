@@ -714,7 +714,7 @@ const PRE={
  j:[[50,50,1.6],[50,50,1.8],[50,50,2.3],[38,75,1.6],[38,75,1.8],[38,75,2.3]],
  b:[[100,100,1.6],[100,100,1.8],[100,100,2.3],[100,100,3.2],[50,100,1.6],[50,100,1.8],[50,100,2.3]]
 };
-const DEFSEC={j:'p2',b:'p1'}, OUTK={j:['jS','jI','jAw'],b:['bS','bI','bAw']};
+const DEFSEC={j:'p2',b:'p2'}, OUTK={j:['jS','jI','jAw'],b:['bS','bI','bAw']};
 const boxLabel=x=>x[0]===x[1]?`${x[0]}×${x[1]}×${x[2]} มม.`:`${x[1]}×${x[0]}×${x[2]} มม. (ด้านสูง ${x[1]} วางตั้ง)`;
 function initBox(k){state[k+'Sec']=DEFSEC[k];state[k+'cB']=PRE[k][+DEFSEC[k].slice(1)][0];state[k+'cH']=PRE[k][+DEFSEC[k].slice(1)][1];state[k+'ct']=PRE[k][+DEFSEC[k].slice(1)][2];}
 initBox('j');initBox('b');
