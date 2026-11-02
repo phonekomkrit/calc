@@ -151,7 +151,7 @@ details.warnbox{padding:6px 12px;margin:6px 0}details.warnbox summary{cursor:poi
   </div>
   <div class="card share noprint">
     <h2>แชร์ค่าที่กรอก</h2>
-    <div class="bar"><button class="main" type="button" onclick="shareCopy('link')">คัดลอกลิงก์แชร์</button></div>
+    <div class="bar"><button class="main" type="button" onclick="shareCopy()">คัดลอกลิงก์แชร์</button></div>
     <div class="field"><label for="shareOut">ลิงก์ที่สร้าง (ถ้าปุ่มคัดลอกไม่ทำงาน ให้กดค้างที่ช่องนี้แล้วคัดลอกเอง)</label><div class="row"><input id="shareOut" type="text" readonly></div></div>
     <div class="note" id="shareMsg" aria-live="polite">ลิงก์เก็บค่าที่กรอกทั้งหมดรวมถึงชื่อโครงการ ผู้รับเปิดแล้วเห็นค่าและผลเหมือนกัน ผู้รับแก้ค่าได้โดยไม่กระทบต้นฉบับของคุณ</div>
   </div>
@@ -1165,7 +1165,7 @@ function drawSection(original=false){
   if(original){svg+=`<g class="front-joist-long"><rect x="${X0}" y="${y}" width="${W}" height="${h}" fill="url(#joistPaint)" stroke="#9a5d29"/><path d="M${X0+2} ${y+3} H${X1-2} M${X0+2} ${y+h-3} H${X1-2}" stroke="#ffdab1" stroke-width="1"/></g>`;}else{
   for(let i=0;i<n;i++){const x=x0+i*sp-jw/2;svg+=`<rect x="${x}" y="${y}" width="${jw}" height="${h}" fill="url(#joistPaint)" stroke="#4d5e6b" stroke-width=".8"/><rect x="${x+2.5}" y="${y+2.5}" width="${Math.max(jw-5,2)}" height="${Math.max(h-5,2)}" fill="none" stroke="#fff8" stroke-width="1"/>`;}
   }
-  lab(y+h/2,'var(--c-joist)',`ตง @ ${+Number(state.js).toFixed(1)} ซม.`,V.joist,lev,'joist');y+=h;
+  lab(y+h/2,'var(--c-joist)',`ตง @ ${Number.isFinite(state.js)?+Number(state.js).toFixed(1):'–'} ซม.`,V.joist,lev,'joist');y+=h;
   h=mv(scn(V.beam),24);lev=lvl(scn(V.beam));
   if(original){const bw=Math.max(V.bw*s,18);scFrontPosts(cx,(scFW()||layers[0].w)*s).forEach(x=>{svg+=`<g class="front-beam-section"><rect x="${x-bw/2}" y="${y}" width="${bw}" height="${h}" rx="2" fill="url(#beamPaint)" stroke="#823e3b"/><rect x="${x-bw/2+3}" y="${y+3}" width="${bw-6}" height="${h-6}" rx="1" fill="#663e3c" stroke="#f1ada3" stroke-width="1"/></g>`;});}else{
   svg+=`<rect x="${X0}" y="${y}" width="${W}" height="${h}" fill="url(#beamPaint)" stroke="#4d5e6b" stroke-width=".8"/><rect x="${X0+4}" y="${y+4}" width="${W-8}" height="${Math.max(h-8,2)}" fill="none" stroke="#fff8" stroke-width="1"/>`;
@@ -1300,7 +1300,7 @@ function lsHTML(p){
     <div class="info" id="info_ls"><p><b>คำแนะนำ:</b> ${p.hint}</p></div></div>`;
 }
 function scFW(){return state.bsMode==='custom'&&state.bs>0?state.bs*10:null;}
-function badParams(){const sm=state.supMode==='none'?'none':'check';return PARAMS.filter(p=>p.id&&!(p.sup&&sm==='none')&&!(Number.isFinite(state[p.id])&&(state[p.id]>0||(p.id==='cap'&&state.legMode!=='manual'&&state[p.id]===0)||(p.id==='fit'&&state[p.id]===0)||(p.id==='supCov'&&state[p.id]===0)))).concat((state.layers||[]).map((l,i)=>[l,i]).filter(([l])=>!(l.h>0&&l.w>0)).map(([l,i])=>({label:'ขนาดนั่งร้านชั้น '+(state.layers.length-i)}))).concat(sm==='check'&&!(state.supH-state.supCov>0)?[{label:'ความหนาพื้นรองรับต้องมากกว่าระยะหุ้ม'}]:[]);}
+function badParams(){const sm=state.supMode==='none'?'none':'check';return PARAMS.filter(p=>p.id&&!(p.sup&&sm==='none')&&!(Number.isFinite(state[p.id])&&state[p.id]<=1e7&&(state[p.id]>=0.01||(p.id==='cap'&&state.legMode!=='manual'&&state[p.id]===0)||(['fit','ll','sw','minw','supCov'].includes(p.id)&&state[p.id]===0)))).concat((state.layers||[]).map((l,i)=>[l,i]).filter(([l])=>!(l.h>0&&l.w>0)).map(([l,i])=>({label:'ขนาดนั่งร้านชั้น '+(state.layers.length-i)}))).concat(sm==='check'&&!(state.supH-state.supCov>0)?[{label:'ความหนาพื้นรองรับต้องมากกว่าระยะหุ้ม'}]:[]);}
 function bsHTML(p){
   const cu=state.bsMode==='custom';
   return `<div class="field"><div class="frow"><div class="fmain"><label for="bsSel">${p.label}</label>
@@ -1361,7 +1361,7 @@ function render(){
   applyLeg();{const ce=document.getElementById('cap');if(ce)ce.value=Number.isFinite(state.cap)?state.cap:'';const le=document.getElementById('legL');if(le)le.value=Number.isFinite(state.legL)?state.legL:'';}
   try{
     const bad=badParams();
-    if(bad.length){out.innerHTML=`<div class="banner">ช่องเหล่านี้ว่างหรือเป็น 0 ยังคำนวณไม่ได้: ${bad.map(b=>b.label).join(' · ')}</div>`;return;}
+    if(bad.length){out.innerHTML=`<div class="banner">ช่องเหล่านี้ว่าง ติดลบ เป็น 0 (ในช่องที่ต้องมากกว่า 0) หรือค่าผิดปกติ (น้อยกว่า 0.01 หรือมากกว่า 10,000,000) ยังคำนวณไม่ได้: ${bad.map(b=>b.label).join(' · ')}</div>`;return;}
     const p=state, M=state.mode, o=compute(p,M);
     const wpTxt = M==='fix'?`${g(o.W)}×0.3048/100 = ${n(o.wp,3)}`:`${g(o.W)}/100 = ${n(o.wp,3)}`;
     let h='';
@@ -1439,29 +1439,34 @@ $s('scheightform').addEventListener('submit',e=>{
   status.style.color='var(--ok)';status.textContent=`อัปเดตแล้ว · U-head ${state.uh.toLocaleString('en-US')} มม. · Jack base ${state.jb.toLocaleString('en-US')} มม.`;
 });
 
-/* ===== แชร์ค่าที่กรอก: เข้ารหัส state + ข้อมูลโครงการเป็นข้อความ base64url ใส่ในลิงก์ (#s=) หรือคัดลอกเป็นรหัส ===== */
+/* ===== แชร์ค่าที่กรอก: เก็บเฉพาะค่าที่ต่างจากค่าเริ่มต้น + ข้อมูลโครงการ บีบอัด (deflate) แล้วเข้ารหัส base64url ใส่ในลิงก์ (#s=) ===== */
 const SHARE_META_KEY='scaffold_rpt_meta_v1';
-function shareEnc(){const o={v:1,s:state};try{o.m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{};}catch(e){o.m={};}
-  const b=new TextEncoder().encode(JSON.stringify(o));let bin='';b.forEach(c=>bin+=String.fromCharCode(c));return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-function shareDec(code){code=String(code||'').trim();const k=code.indexOf('#s=');if(k>=0)code=code.slice(k+3);code=code.replace(/[^A-Za-z0-9_-]/g,'');if(!code||code.length>200000)return null;
-  try{let b=code.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+const SHARE_DEF=JSON.parse(JSON.stringify(state));
+const b64u=u=>{let b='';u.forEach(c=>b+=String.fromCharCode(c));return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const unb64u=t=>{let b=t.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const r=atob(b),u=new Uint8Array(r.length);for(let i=0;i<r.length;i++)u[i]=r.charCodeAt(i);return u;};
+async function shareStream(u,Ctor){const st=new Blob([u]).stream().pipeThrough(new Ctor('deflate-raw'));return new Uint8Array(await new Response(st).arrayBuffer());}
+async function shareEnc(){const d={},sk=new Set(['jS','jI','jAw','bS','bI','bAw','legL','catCap','buckCap','plyMm']);if(state.plyThk!=='custom')['pS','pI','pIbQ'].forEach(x=>sk.add(x));if(state.plyStr!=='custom')['pFb','pFs','pE'].forEach(x=>sk.add(x));if(state.legMode!=='manual')sk.add('cap');if(state.bsMode!=='custom')sk.add('bs');Object.keys(state).forEach(k=>{if(typeof state[k]==='function'||sk.has(k))return;if(!(k in SHARE_DEF)||JSON.stringify(state[k])!==JSON.stringify(SHARE_DEF[k]))d[k]=state[k];});
+  const o={v:2,s:d};try{const m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{},mm={};['proj','site','by','lic'].forEach(k=>{if(m[k])mm[k]=m[k];});if(Object.keys(mm).length)o.m=mm;}catch(e){}
+  const raw=new TextEncoder().encode(JSON.stringify(o));
+  if(typeof CompressionStream==='function'){try{return 'z'+b64u(await shareStream(raw,CompressionStream));}catch(e){}}
+  return 'p'+b64u(raw);}
+async function shareDec(code){code=String(code||'').trim();const k=code.indexOf('#s=');if(k>=0)code=code.slice(k+3);code=code.replace(/[^A-Za-z0-9_-]/g,'');if(!code||code.length>200000)return null;
+  try{let u;if(code[0]==='z'){if(typeof DecompressionStream!=='function')return null;u=await shareStream(unb64u(code.slice(1)),DecompressionStream);}else if(code[0]==='p')u=unb64u(code.slice(1));else u=unb64u(code);
    const o=JSON.parse(new TextDecoder().decode(u));return o&&typeof o==='object'&&o.s&&typeof o.s==='object'?o:null;}catch(e){return null;}}
-function shareApply(o){const cl=JSON.parse(JSON.stringify(o.s));Object.keys(cl).forEach(k=>{if(!(k in state)||typeof cl[k]==='function')delete cl[k];});Object.assign(state,cl);if(state.supMode!=='none')state.supMode='check';
-  if(o.m&&typeof o.m==='object'){const m={};['proj','site','by','date','lic'].forEach(k=>{if(typeof o.m[k]==='string')m[k]=o.m[k].slice(0,300);});try{localStorage.setItem(SHARE_META_KEY,JSON.stringify(m));}catch(e){}}return true;}
+function shareApply(o){const cl=JSON.parse(JSON.stringify(o.s));Object.keys(cl).forEach(k=>{if(!/^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(k)||k==='__proto__'||k==='constructor'||k==='prototype')delete cl[k];});Object.assign(state,cl);if(state.supMode!=='none')state.supMode='check';
+  if(o.m&&typeof o.m==='object'){let m={};try{m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{};}catch(e){}['proj','site','by','lic'].forEach(k=>{if(typeof o.m[k]==='string')m[k]=o.m[k].slice(0,300);});try{localStorage.setItem(SHARE_META_KEY,JSON.stringify(m));}catch(e){}}return true;}
+function shareAfter(){state.mode='fix';applyPly();applyLeg();['j','b'].forEach(k=>{if(!/^p[0-9]$/.test(state[k+'Sec'])&&state[k+'Sec']!=='custom')state[k+'Sec']=DEFSEC[k];applyBox(k);});save();build();}
 function shareMsg(t,bad){const e=document.getElementById('shareMsg');if(e){e.textContent=t;e.style.color=bad?'var(--bad)':'var(--ok)';}}
-function shareCopy(kind){const code=shareEnc();let val=code;
-  if(kind==='link'){let base=location.href.split('#')[0];val=base+'#s='+code;}
+async function shareCopy(){let code;try{code=await shareEnc();}catch(e){shareMsg('สร้างลิงก์ไม่สำเร็จ',true);return;}
+  const val=location.href.split('#')[0]+'#s='+code;
   const out=document.getElementById('shareOut');if(out){out.value=val;try{out.focus();out.select();}catch(e){}}
-  const done=()=>shareMsg(kind==='link'?'คัดลอกลิงก์แล้ว ส่งให้ผู้รับเปิดได้เลย':'คัดลอกรหัสแชร์แล้ว ส่งให้ผู้รับวางในช่อง "โหลดค่า"');
+  const done=()=>shareMsg('คัดลอกลิงก์แล้ว ส่งให้ผู้รับเปิดได้เลย');
   const fb=()=>{try{if(document.execCommand('copy'))done();else shareMsg('คัดลอกอัตโนมัติไม่ได้ กดค้างที่ช่องด้านบนแล้วคัดลอกเอง',true);}catch(e){shareMsg('คัดลอกอัตโนมัติไม่ได้ กดค้างที่ช่องด้านบนแล้วคัดลอกเอง',true);}};
   try{navigator.clipboard.writeText(val).then(done,fb);}catch(e){fb();}}
-function shareLoad(){const el=document.getElementById('shareIn'),o=shareDec(el&&el.value);
-  if(!o){shareMsg('ลิงก์หรือรหัสไม่ถูกต้อง ตรวจว่าคัดลอกมาครบ',true);return;}
-  shareApply(o);state.mode='fix';applyPly();applyLeg();['j','b'].forEach(k=>{if(!/^p[0-9]$/.test(state[k+'Sec'])&&state[k+'Sec']!=='custom')state[k+'Sec']=DEFSEC[k];applyBox(k);});
-  save();build();shareMsg('โหลดค่าแล้ว');}
+const SHARE_HASH=/^#s=/.test(location.hash)?location.hash:'';
 load();
 if(state.supMode!=='none')state.supMode='check';
-try{if(/^#s=/.test(location.hash)){const _o=shareDec(location.hash);if(_o){shareApply(_o);history.replaceState(null,'',location.href.split('#')[0]);}}}catch(e){}
+if(SHARE_HASH){try{history.replaceState(null,'',location.href.split('#')[0]);}catch(e){}window.addEventListener('load',async()=>{const o=await shareDec(SHARE_HASH);if(o){shareApply(o);shareAfter();}});}
 state.mode='fix';if(!PLY.find(x=>x.id===state.plyThk)&&state.plyThk!=='custom')state.plyThk='apa58';if(!STR.find(x=>x.id===state.plyStr)&&state.plyStr!=='custom')state.plyStr='s2w';applyPly();
 scDefaults(true);scBuildPanel();
 $s('scsvg').classList.add('zoomed');
