@@ -629,6 +629,7 @@ const PARAMS = [
  {id:'jI',  label:'I ของตง (คำนวณอัตโนมัติ)', unit:'ซม.⁴', v:15.86},
  {id:'jAw', label:'พื้นที่เอว Aw ของตง (คำนวณอัตโนมัติ)', unit:'ซม.²', v:2.3},
  {id:'bs',  bsel:true, label:'ระยะห่างคานที่เลือกใช้ (= ช่วงตง)', unit:'ซม.', v:120, hint:'โปรแกรมใช้ตามความกว้างของเฟรมนั่งร้านชั้นบนสุดในภาพ ถ้าต้องการระยะอื่นให้เลือก "ระบุเอง" แล้วกรอกเป็น ซม. ภาพด้านหน้าจะเปลี่ยนตามระยะที่กรอก'},
+ {id:'gap', gsel:true, label:'ระยะห่างนั่งร้าน (ช่องว่างระหว่างชุดนั่งร้าน)', unit:'ซม.', v:120, hint:'ระยะระหว่างคานของนั่งร้านสองชุดที่ตั้งเคียงกัน (วัดจากคานถึงคาน) ปกติเท่ากับความกว้างเฟรม ถ้าเว้นช่องว่างกว้างกว่านั้นให้เลือก "ระบุเอง" ระยะรับน้ำหนักของคานหลักจะเป็น (ความกว้างเฟรม + ระยะห่างนั่งร้าน) ÷ 2 และตงต้องรับช่วงที่ยาวกว่า'},
  {g:'4) คานหลักเหล็กกล่อง'},
  {selbox:'b'},
  {id:'bS',  label:'S ของคาน (คำนวณอัตโนมัติ)', unit:'ซม.³', v:22.32},
@@ -650,7 +651,7 @@ const LS_KEY='scaffold_calc_v1';
 const app=document.getElementById('app');
 let state={mode:'fix'};
 PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});
-state.supMode='check';
+state.supMode='check';state.gapMode='auto';
 
 /* ===== ตัวเลือกไม้อัด (ค่าเป็นหน่วยนิ้ว ต่อกว้าง 1 ฟุต ลายเสี้ยนขนานช่วง) ===== */
 const IN3=16.387064, IN4=41.623144, IN2=6.4516, PSI=0.0703070;
@@ -1092,7 +1093,7 @@ function scSideArt(L,x,y,k,token){
   const bar=d=>`<path d="${d}" fill="none" stroke="#4b718e" stroke-width="22"/><path d="${d}" fill="none" stroke="#b4d4e9" stroke-width="11"/>`;
   return `<g class="sc-side-frame" data-width="${w}" data-height="${h}" transform="translate(${x} ${y}) scale(${k})"><defs><clipPath id="${clip}"><rect x="${-w*.25}" y="-22" width="${w*2.5}" height="${h+44}"/></clipPath></defs><g clip-path="url(#${clip})">${[-1,0,1,2].map(n=>`<g class="${n===0||n===1?'full-bay':'partial-bay'}">${bar(`M${n*w} ${top} L${(n+1)*w} ${bottom} M${(n+1)*w} ${top} L${n*w} ${bottom}`)}${n===0||n===1?`<circle cx="${(n+.5)*w}" cy="${(top+bottom)/2}" r="14" fill="#66879d" stroke="#edf5fa" stroke-width="3"/>`:''}</g>`).join('')}${[0,w,2*w].map(xx=>`<g class="shared-post"><path d="M${xx} 0 V${h}" stroke="#596775" stroke-width="43"/><path d="M${xx} 0 V${h}" stroke="#b4c2cc" stroke-width="28"/>${[top,bottom].map(yy=>`<circle cx="${xx}" cy="${yy}" r="14" fill="#7898ad" stroke="#ecf4f9" stroke-width="3"/>`).join('')}</g>`).join('')}</g></g>`;
 }
-function scFrontPosts(cx,w){return [cx-1.5*w,cx-.5*w,cx+.5*w,cx+1.5*w];}
+function scFrontPosts(cx,w,g){g=g==null?w:g;return [cx-g/2-w,cx-g/2,cx+g/2,cx+g/2+w];}
 function scEditMode(){
   const section=$s('scsec');section.classList.toggle('editing',scZoom);
   section.querySelectorAll('input').forEach(el=>{
@@ -1116,7 +1117,8 @@ function drawSection(original=false){
   if(invalid){$s(original?'scoriginalsvg':'scsvg').innerHTML='<div class="banner">กรอกความสูงและความกว้างทุกชั้นให้มากกว่า 0 เพื่อแสดงภาพ</div>';if(!original){scOriginalView();scEditMode();}return;}
   const layers=state.layers.map(L=>({...L,h:scn(L.h),w:original?scn(L.w):state.ls*10}));
   const s=0.13,mv=(mm,mn)=>Math.max(mm*s,mn);
-  const fw=Math.max(...layers.map(l=>l.w))*s*(original?3:2.5), W=Math.max(fw+40,420), X0=200, cx=X0+W/2, X1=X0+W, SVGW=X1+360, TOP=90;
+  const GPX=()=>state.gapMode==='custom'&&state.gap>0?state.gap*10*s:null;
+  const fw=original?Math.max(...layers.map(l=>2*l.w*s+(GPX()||l.w*s))):Math.max(...layers.map(l=>l.w))*s*2.5, W=Math.max(fw+40,420), X0=200, cx=X0+W/2, X1=X0+W, SVGW=X1+360, TOP=90;
   const total=scn(V.slab)+scn(V.ply)+scn(V.joist)+scn(V.beam)+scn(V.uh)+layers.reduce((a,l)=>a+l.h,0)+scn(V.jb);
   let rem=total;const lvl=h=>{const v=rem;rem-=h;return v;};
   const LABS=[];
@@ -1167,29 +1169,29 @@ function drawSection(original=false){
   }
   lab(y+h/2,'var(--c-joist)',`ตง @ ${Number.isFinite(state.js)?+Number(state.js).toFixed(1):'–'} ซม.`,V.joist,lev,'joist');y+=h;
   h=mv(scn(V.beam),24);lev=lvl(scn(V.beam));
-  if(original){const bw=Math.max(V.bw*s,18);scFrontPosts(cx,(scFW()||layers[0].w)*s).forEach(x=>{svg+=`<g class="front-beam-section"><rect x="${x-bw/2}" y="${y}" width="${bw}" height="${h}" rx="2" fill="url(#beamPaint)" stroke="#823e3b"/><rect x="${x-bw/2+3}" y="${y+3}" width="${bw-6}" height="${h-6}" rx="1" fill="#663e3c" stroke="#f1ada3" stroke-width="1"/></g>`;});}else{
+  if(original){const bw=Math.max(V.bw*s,18);scFrontPosts(cx,(scFW()||layers[0].w)*s,GPX()).forEach(x=>{svg+=`<g class="front-beam-section"><rect x="${x-bw/2}" y="${y}" width="${bw}" height="${h}" rx="2" fill="url(#beamPaint)" stroke="#823e3b"/><rect x="${x-bw/2+3}" y="${y+3}" width="${bw-6}" height="${h-6}" rx="1" fill="#663e3c" stroke="#f1ada3" stroke-width="1"/></g>`;});}else{
   svg+=`<rect x="${X0}" y="${y}" width="${W}" height="${h}" fill="url(#beamPaint)" stroke="#4d5e6b" stroke-width=".8"/><rect x="${X0+4}" y="${y+4}" width="${W-8}" height="${Math.max(h-8,2)}" fill="none" stroke="#fff8" stroke-width="1"/>`;
   }
   lab(y+h/2,'var(--c-beam)','คานหลัก',V.beam,lev,'beam');y+=h;
   h=mv(scn(V.uh),30);lev=lvl(scn(V.uh));const yU=y;
-  const lx=original?scFrontPosts(cx,(scFW()||layers[0].w)*s):[cx-layers[0].w*s,cx,cx+layers[0].w*s];
+  const lx=original?scFrontPosts(cx,(scFW()||layers[0].w)*s,GPX()):[cx-layers[0].w*s,cx,cx+layers[0].w*s];
   lx.forEach(x=>{svg+=scJackArt(x,y,h,'head');});
   lab(y+h/2,'var(--c-uhead)','U-head',V.uh,lev,'uh');y+=h;
   layers.forEach((L,i)=>{
     const hh=L.h*s,w=L.w*s,xa=cx-w/2,xb=cx+w/2;lev=lvl(L.h);
-    svg+=original?[cx-1.5*w,cx+.5*w].map((x,j)=>scFrameArt(L,x,y,s,'layer'+i+'-front'+j)).join(''):scSideArt(L,cx-w,y,s,'layer'+i);
+    svg+=original?[cx-(GPX()||w)/2-w,cx+(GPX()||w)/2].map((x,j)=>scFrameArt(L,x,y,s,'layer'+i+'-front'+j)).join(''):scSideArt(L,cx-w,y,s,'layer'+i);
     if(i>0){const prev=layers[i-1];if(prev.w===L.w){
-      (original?scFrontPosts(cx,w):[cx-w,cx,cx+w]).forEach(x=>{svg+=`<rect class="sc-joint" x="${x-5}" y="${y-9}" width="10" height="18" rx="2" fill="#9aabb8" stroke="#506474" stroke-width="1"/>`;});
+      (original?scFrontPosts(cx,w,GPX()):[cx-w,cx,cx+w]).forEach(x=>{svg+=`<rect class="sc-joint" x="${x-5}" y="${y-9}" width="10" height="18" rx="2" fill="#9aabb8" stroke="#506474" stroke-width="1"/>`;});
     }}
     svg+=`<text x="${cx}" y="${y+hh*.7}" font-size="14" text-anchor="middle" fill="var(--ink)" stroke="var(--card)" stroke-width="4" paint-order="stroke">ชั้น ${layers.length-i} · ${L.h.toLocaleString('en-US')} มม.</text>`;
     lab(y+hh/2,'var(--c-frame)','นั่งร้าน ชั้น '+(layers.length-i),L.h,lev,'L'+i);y+=hh;
   });
   h=mv(scn(V.jb),40);lev=lvl(scn(V.jb));
-  (original?scFrontPosts(cx,(scFW()||layers[layers.length-1].w)*s):[cx-layers[layers.length-1].w*s,cx,cx+layers[layers.length-1].w*s]).forEach(x=>{svg+=scJackArt(x,y,h,'base');});
+  (original?scFrontPosts(cx,(scFW()||layers[layers.length-1].w)*s,GPX()):[cx-layers[layers.length-1].w*s,cx,cx+layers[layers.length-1].w*s]).forEach(x=>{svg+=scJackArt(x,y,h,'base');});
   lab(y+h/2,'var(--c-jack)','Jack base',V.jb,lev,'jb');y+=h;
   {const nbr=Math.min(10,Math.max(0,Math.floor(Number(state.legBr)||0)));
    if(nbr>0&&(state.legMode==='pipe'||(state.legMode==='frame'&&state.legDerate))){
-    const px=original?scFrontPosts(cx,(scFW()||layers[layers.length-1].w)*s):[cx-layers[layers.length-1].w*s,cx,cx+layers[layers.length-1].w*s];
+    const px=original?scFrontPosts(cx,(scFW()||layers[layers.length-1].w)*s,GPX()):[cx-layers[layers.length-1].w*s,cx,cx+layers[layers.length-1].w*s];
     const xa=Math.min(...px),xb=Math.max(...px);let g='';
     for(let k=1;k<=nbr;k++){const yy=y-(k/(nbr+1))*(y-yU);
      g+=`<line x1="${xa-14}" y1="${yy}" x2="${xb+14}" y2="${yy}" stroke="#4b5563" stroke-width="7" stroke-linecap="round"/><line x1="${xa-14}" y1="${yy-1.2}" x2="${xb+14}" y2="${yy-1.2}" stroke="#d7dde3" stroke-width="2.4" stroke-linecap="round"/>`;
@@ -1210,9 +1212,9 @@ function drawSection(original=false){
   `<text class="under-height-value" x="${tx2}" y="${yb+17}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">${Number(under0.toFixed(2)).toLocaleString('en-US')} มม.</text>`;
   if(!original){const w=layers[0].w*s;[cx-w,cx].forEach((x,i)=>{svg+=`<g class="bay-dimension" fill="var(--dim)" stroke="var(--dim)"><path d="M${x} ${y+45} h${w} M${x} ${y+40} v10 M${x+w} ${y+40} v10" fill="none"/><text x="${x+w/2}" y="${y+65}" text-anchor="middle" font-size="13" stroke="none">ความยาวช่วง (มม.)</text></g>${i===0?(()=>{const mmv=Math.round(Number(state.ls)*10),known=[1829,1524,1219,914,610].includes(mmv)&&state.lsSel!=='custom';const st='height:44px;font-size:16px;text-align:center;text-align-last:center;padding:0 0 0 18px;border:1px solid var(--accent);border-radius:6px;background:var(--yel);color:var(--ink);box-sizing:border-box';return `<foreignObject x="${x+w/2-(known?55:100)}" y="${y+72}" width="${known?110:200}" height="44"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;gap:4px"><select class="scbaysel" aria-label="ความยาวช่วงนั่งร้านแนวนอน" style="width:${known?110:96}px;${st}">${[1829,1524,1219,914,610].map(v=>`<option value="${v}" ${known&&mmv===v?'selected':''}>${v.toLocaleString('en-US')}</option>`).join('')}<option value="custom" ${known?'':'selected'}>กำหนดเอง</option></select>${known?'':`<input class="scin" data-key="bay0" type="text" inputmode="decimal" value="${layers[0].w}" aria-label="ความยาวช่วงกำหนดเอง มม." style="width:96px;padding:4px;text-align:center;${st}">`}</div></foreignObject>`;})():`<foreignObject x="${x+w/2-50}" y="${y+72}" width="100" height="44"><input xmlns="http://www.w3.org/1999/xhtml" class="scin" data-key="bay${i}" readonly tabindex="-1" type="text" inputmode="decimal" value="${layers[0].w}" aria-label="ความยาวช่วงนั่งร้านแนวนอน ชุด ${i+1} มม." style="width:100px;height:44px;font-size:16px;padding:4px;text-align:center;border:1px solid var(--accent);border-radius:6px;background:var(--yel);color:var(--ink)"></foreignObject>`}`;});}
 
-  if(original){const mm=scFW()||layers[layers.length-1].w,w=mm*s,left=cx-1.5*w;
-    [0,1,2].forEach(i=>{const x=left+i*w;svg+=`<g class="front-width-dimension" fill="var(--dim)" stroke="var(--dim)"><path d="M${x} ${y+45} h${w} M${x} ${y+39} v12 M${x+w} ${y+39} v12" fill="none"/><text x="${x+w/2}" y="${y+66}" text-anchor="middle" font-size="13" stroke="none">${i===1?'ช่องว่าง':'นั่งร้าน'} ${mm.toLocaleString('en-US')} มม.</text></g>`;});
-    svg+=`<g class="front-total-width" fill="var(--dim)" stroke="var(--dim)"><path d="M${left} ${y+88} h${3*w} M${left} ${y+82} v12 M${left+3*w} ${y+82} v12" fill="none"/><text x="${cx}" y="${y+109}" text-anchor="middle" font-size="14" stroke="none">รวม ${(3*mm).toLocaleString('en-US')} มม.</text></g>`;
+  if(original){const mm=scFW()||layers[layers.length-1].w,w=mm*s,gmm=state.gapMode==='custom'&&state.gap>0?state.gap*10:mm,gw=gmm*s,left=cx-gw/2-w;
+    [[left,w,mm,'นั่งร้าน'],[left+w,gw,gmm,'ช่องว่าง'],[left+w+gw,w,mm,'นั่งร้าน']].forEach(([x,ww,v,nm])=>{svg+=`<g class="front-width-dimension" fill="var(--dim)" stroke="var(--dim)"><path d="M${x} ${y+45} h${ww} M${x} ${y+39} v12 M${x+ww} ${y+39} v12" fill="none"/><text x="${x+ww/2}" y="${y+66}" text-anchor="middle" font-size="13" stroke="none">${nm} ${v.toLocaleString('en-US')} มม.</text></g>`;});
+    svg+=`<g class="front-total-width" fill="var(--dim)" stroke="var(--dim)"><path d="M${left} ${y+88} h${2*w+gw} M${left} ${y+82} v12 M${left+2*w+gw} ${y+82} v12" fill="none"/><text x="${cx}" y="${y+109}" text-anchor="middle" font-size="14" stroke="none">รวม ${(2*mm+gmm).toLocaleString('en-US')} มม.</text></g>`;
   }
   const H=Math.max(y+(original?130:130),(LABS.length?LABS[LABS.length-1].ty:0)+70);
   $s(original?'scoriginalsvg':'scsvg').innerHTML=`<svg viewBox="0 0 ${SVGW} ${H}" role="img" aria-label="ภาพตัดขวางนั่งร้าน ความสูงรวม ${total} มม.">${svg}</svg>`;
@@ -1245,7 +1247,7 @@ function devSetDefaults(){const snap=JSON.parse(JSON.stringify(state));try{local
 function devClearDefaults(){try{localStorage.removeItem(DEV_KEY);}catch(e){}alert('ล้างค่าเริ่มต้นที่ตั้งไว้แล้ว ปุ่ม คืนค่าเริ่มต้น จะกลับไปใช้ค่าของโปรแกรม');}
 function load(){try{const raw=localStorage.getItem(LS_KEY),s=JSON.parse(raw||'null');if(s)Object.assign(state,s);else{const d=devSnap();if(d)Object.assign(state,d);}}catch(e){}}
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
-function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.plyThk='apa58';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
+function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.gapMode='auto';state.bsMode=undefined;state.plyThk='apa58';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
 
 const n=(x,d=2)=>Number.isFinite(x)?x.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const g=(x)=>{const s=Number(x);return Number.isFinite(s)?String(+s.toPrecision(7)):'?';};
@@ -1256,9 +1258,10 @@ function compute(p,mode){
   const FT=30.48;
   const wp = mode==='fix' ? W*(FT/100)/100 : W/100;   // กก./ซม. บนไม้อัด
   const wj = mode==='fix' ? W*(p.js/100)/100 : W/100; // บนตง
-  const wb = mode==='fix' ? W*(p.bs/100)/100 : W/100; // บนคาน
+  const gapv=(p.gapMode==='custom'&&p.gap>0)?p.gap:p.bs, trib=(p.bs+gapv)/2, jspan=Math.max(p.bs,gapv);
+  const wb = mode==='fix' ? W*(trib/100)/100 : W/100; // บนคาน
   const Fb = p.fr*p.Fy, Fv = 0.4*p.Fy, k=145/360;
-  const o={W_dl,W,wp,wj,wb,Fb,Fv};
+  const o={W_dl,W,wp,wj,wb,Fb,Fv,gap:gapv,trib,jspan};
   o.pb=3.16*Math.sqrt(p.pS*p.pFb/wp);
   o.pd=Math.cbrt(k*p.pI*p.pE/wp);
   o.ps=(p.pFs/(0.625*wp))*p.pIbQ;
@@ -1271,7 +1274,7 @@ function compute(p,mode){
   o.bd=Math.cbrt(k*p.bI*p.Es/wb);
   o.bsh=Fv*p.bAw/(0.625*wb);
   o.bL=Math.min(o.bb,o.bd,o.bsh);
-  o.area=p.bs*p.ls/1e4;
+  o.area=trib*p.ls/1e4;
   o.P=o.area*W;
   o.plate=o.P/p.soil;
   {const d=p.supH-p.supCov;o.sd=d;o.b0=4*(p.supA+d);o.vcA=0.53*Math.sqrt(p.fcc);o.Vc=d>0?o.vcA*o.b0*d:NaN;o.vP=d>0?o.P/(o.b0*d):NaN;}
@@ -1301,6 +1304,14 @@ function lsHTML(p){
 }
 function scFW(){return state.bsMode==='custom'&&state.bs>0?state.bs*10:null;}
 function badParams(){const sm=state.supMode==='none'?'none':'check';return PARAMS.filter(p=>p.id&&!(p.sup&&sm==='none')&&!(Number.isFinite(state[p.id])&&state[p.id]<=1e7&&(state[p.id]>=0.01||(p.id==='cap'&&state.legMode!=='manual'&&state[p.id]===0)||(['fit','ll','sw','minw','supCov'].includes(p.id)&&state[p.id]===0)))).concat((state.layers||[]).map((l,i)=>[l,i]).filter(([l])=>!(l.h>0&&l.w>0)).map(([l,i])=>({label:'ขนาดนั่งร้านชั้น '+(state.layers.length-i)}))).concat(sm==='check'&&!(state.supH-state.supCov>0)?[{label:'ความหนาพื้นรองรับต้องมากกว่าระยะหุ้ม'}]:[]);}
+function gsHTML(p){
+  const cu=state.gapMode==='custom';
+  return `<div class="field"><div class="frow"><div class="fmain"><label for="gapSel">${p.label}</label>
+    <div class="row"><select id="gapSel"><option value="auto" ${cu?'':'selected'}>เท่ากับความกว้างนั่งร้าน</option><option value="custom" ${cu?'selected':''}>ระบุเอง</option></select></div></div><span class="ibtn-ph"></span></div>
+    <div class="frow"><div class="fmain"><label for="gap">ค่าที่ใช้คำนวณ</label><div class="row"><input id="gap" type="number" inputmode="decimal" step="any" value="${Number.isFinite(state.gap)?state.gap:''}" ${cu?'':'readonly tabindex="-1"'}><span class="u">${p.unit}</span></div></div>
+    <button type="button" class="ibtn" data-info="gap" aria-label="คำแนะนำ ${p.label}" aria-expanded="false">i</button></div>
+    <div class="info" id="info_gap"><p><b>คำแนะนำ:</b> ${p.hint}</p></div></div>`;
+}
 function bsHTML(p){
   const cu=state.bsMode==='custom';
   return `<div class="field"><div class="frow"><div class="fmain"><label for="bsSel">${p.label}</label>
@@ -1311,6 +1322,7 @@ function bsHTML(p){
 }
 function build(){
   if(state.bsMode!=='custom'&&state.layers&&state.layers[0]&&state.layers[0].w>0)state.bs=+(state.layers[0].w/10).toFixed(2);
+  if(state.gapMode!=='custom'||!(state.gap>0))state.gap=state.bs;
   scSyncHeight();applyLeg();
   let h='';
   h+=`<div class="card" style="display:none"></div>`;
@@ -1323,6 +1335,7 @@ function build(){
     if(p.sup&&state.supMode==='none')return;
     if(p.lsel){h+=lsHTML(p);return;}
     if(p.bsel){h+=bsHTML(p);return;}
+    if(p.gsel){h+=gsHTML(p);return;}
     if(p.g){if(open)h+=`</div></div><div class="resc" id="res_${sec}"></div></section>`;sec++;h+=`<section class="sec"><div class="card"><h2>${p.g}</h2><div class="grid">`;open=true;return;}
     const hasInfo=p.note||p.hint;
     h+=`<div class="field"><div class="frow"><div class="fmain"><label for="${p.id}">${p.label}</label>
@@ -1342,6 +1355,7 @@ function build(){
   });
   const dr=document.getElementById('legDerate');if(dr)dr.addEventListener('change',e=>{state.legDerate=e.target.checked;applyLeg();save();build();});
   const lsS=document.getElementById('lsSel');if(lsS)lsS.addEventListener('change',e=>{const v=e.target.value;state.lsSel=v;if(v!=='custom')state.ls=+v/10;save();build();});
+  const gpS=document.getElementById('gapSel');if(gpS)gpS.addEventListener('change',e=>{state.gapMode=e.target.value;if(state.gapMode==='custom'&&!(state.gap>0))state.gap=state.bs>0?state.bs:120;save();build();});
   const bsS=document.getElementById('bsSel');if(bsS)bsS.addEventListener('change',e=>{state.bsMode=e.target.value;if(state.bsMode==='custom'&&!(state.bs>0))state.bs=120;save();build();});
   const lsI=document.getElementById('lsmm');if(lsI)lsI.addEventListener('input',e=>{state.ls=e.target.value===''?NaN:parseFloat(e.target.value)/10;state.lsSel='custom';save();render();});
   const sm=document.getElementById('supMode');if(sm)sm.addEventListener('change',e=>{state.supMode=e.target.value;save();build();});
@@ -1387,11 +1401,11 @@ function render(){
     h+=step('1) การดัด','จาก Fb = M/S = wL²/(10S)\nL = 3.16 √(S·Fb / w)',`L = 3.16 √((${g(p.jS)} × ${n(o.Fb,0)}) / ${n(o.wj,3)})`,`${n(o.jb)} ซม.`);
     h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(145EI) ≤ L/360\nL = ∛(145·I·E / (360·w))',`L = ∛((145 × ${g(p.jI)} × ${g(p.Es)}) / (360 × ${n(o.wj,3)}))`,`${n(o.jd)} ซม.`);
     h+=step('3) แรงเฉือน','จาก Fv = 0.4Fy = V/Aw , V = 0.625wL\nL = 0.4·Fy·Aw / (0.625·w)',`L = (0.4 × ${g(p.Fy)} × ${g(p.jAw)}) / (0.625 × ${n(o.wj,3)})`,`${n(o.js_)} ซม.`);
-    h+=step(`ตรวจ: คานห่าง ${g(p.bs)} ซม.`,`ยอมให้ = ค่าต่ำสุด (คุมโดย: ${ctl(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน'])})`,`${g(p.bs)} ≤ ${n(o.jL)}`,`${n(o.jL)} ซม.`,p.bs<=o.jL);
+    h+=step(`ตรวจ: ช่วงตงยาวสุด ${g(o.jspan)} ซม.`,`ยอมให้ = ค่าต่ำสุด (คุมโดย: ${ctl(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน'])})`,`${g(o.jspan)} ≤ ${n(o.jL)}`,`${n(o.jL)} ซม.`,o.jspan<=o.jL);
     h+=`</div>`;
     // 4 คาน
     h+='<!--SEG-->'+`<div class="card"><h2>ผลที่ 4: คาน ${scNames().b} → ระยะห่างขา</h2>`;
-    h+=step('น้ำหนักบนคาน','w (กก./ซม.) '+(M==='fix'?'= W × ระยะคาน(ม.) / 100':'= W / 100'),M==='fix'?`w = ${g(o.W)} × ${g(p.bs/100)} / 100 = ${n(o.wb,3)}`:`w = ${g(o.W)} / 100 = ${n(o.wb,3)}`,`${n(o.wb,3)} กก./ซม.`);
+    h+=step('น้ำหนักบนคาน','w (กก./ซม.) '+(M==='fix'?'= W × ระยะรับน้ำหนักคาน(ม.) / 100':'= W / 100'),M==='fix'?`w = ${g(o.W)} × ${g(o.trib/100)} / 100 = ${n(o.wb,3)}`:`w = ${g(o.W)} / 100 = ${n(o.wb,3)}`,`${n(o.wb,3)} กก./ซม.`);
     h+=`<div class="step"><b>ตรวจสอบระยะห่างสูงสุดเนื่องจาก</b></div>`;
     h+=step('1) การดัด','จาก Fb = M/S = wL²/(10S)\nL = 3.16 √(S·Fb / w)',`L = 3.16 √((${g(p.bS)} × ${n(o.Fb,0)}) / ${n(o.wb,3)})`,`${n(o.bb)} ซม.`);
     h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(145EI) ≤ L/360\nL = ∛(145·I·E / (360·w))',`L = ∛((145 × ${g(p.bI)} × ${g(p.Es)}) / (360 × ${n(o.wb,3)}))`,`${n(o.bd)} ซม.`);
@@ -1400,7 +1414,7 @@ function render(){
     h+=`</div>`;
     // 5 ขา
     h+='<!--SEG-->'+`<div class="card"><h2>ผลที่ 5: น้ำหนักลงขาและดิน</h2>`;
-    h+=step('พื้นที่รับน้ำหนักต่อขา','A = ระยะคาน × ระยะขา',`A = ${g(p.bs/100)} × ${g(p.ls/100)}`,`${n(o.area)} ตร.ม.`);
+    h+=step('พื้นที่รับน้ำหนักต่อขา','A = ระยะรับน้ำหนักคาน × ระยะขา',`A = ${g(o.trib/100)} × ${g(p.ls/100)}`,`${n(o.area)} ตร.ม.`);
     if(p.legMode==='frame'){const fi=frameInfo();
       h+=step('เฟรมนั่งร้านสำเร็จรูป จากภาพตัดขวาง','กำลังรับต่อขา = กำลังรับของเฟรมที่อ่อนที่สุด ÷ 2',`${fi.rows.length} ชั้น · ตำแหน่ง load: ${fi.o[1]} · ${fi.rows.map(r=>r.known?`ชั้น ${fi.rows.length-r.i}: ${n(r.cap,0)}`:`ชั้น ${fi.rows.length-r.i}: ไม่มีในแคตตาล็อก`).join(' , ')} กก./เฟรม`,Number.isFinite(p.catCap)?`${n(p.catCap,0)} กก./ขา`:'ไม่มีข้อมูล');
     }
@@ -1445,7 +1459,7 @@ const SHARE_DEF=JSON.parse(JSON.stringify(state));
 const b64u=u=>{let b='';u.forEach(c=>b+=String.fromCharCode(c));return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{let b=t.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const r=atob(b),u=new Uint8Array(r.length);for(let i=0;i<r.length;i++)u[i]=r.charCodeAt(i);return u;};
 async function shareStream(u,Ctor){const st=new Blob([u]).stream().pipeThrough(new Ctor('deflate-raw'));return new Uint8Array(await new Response(st).arrayBuffer());}
-async function shareEnc(){const d={},sk=new Set(['jS','jI','jAw','bS','bI','bAw','legL','catCap','buckCap','plyMm']);if(state.plyThk!=='custom')['pS','pI','pIbQ'].forEach(x=>sk.add(x));if(state.plyStr!=='custom')['pFb','pFs','pE'].forEach(x=>sk.add(x));if(state.legMode!=='manual')sk.add('cap');if(state.bsMode!=='custom')sk.add('bs');Object.keys(state).forEach(k=>{if(typeof state[k]==='function'||sk.has(k))return;if(!(k in SHARE_DEF)||JSON.stringify(state[k])!==JSON.stringify(SHARE_DEF[k]))d[k]=state[k];});
+async function shareEnc(){const d={},sk=new Set(['jS','jI','jAw','bS','bI','bAw','legL','catCap','buckCap','plyMm']);if(state.plyThk!=='custom')['pS','pI','pIbQ'].forEach(x=>sk.add(x));if(state.plyStr!=='custom')['pFb','pFs','pE'].forEach(x=>sk.add(x));if(state.legMode!=='manual')sk.add('cap');if(state.bsMode!=='custom')sk.add('bs');if(state.gapMode!=='custom')sk.add('gap');Object.keys(state).forEach(k=>{if(typeof state[k]==='function'||sk.has(k))return;if(!(k in SHARE_DEF)||JSON.stringify(state[k])!==JSON.stringify(SHARE_DEF[k]))d[k]=state[k];});
   const o={v:2,s:d};try{const m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{},mm={};['proj','site','by','lic'].forEach(k=>{if(m[k])mm[k]=m[k];});if(Object.keys(mm).length)o.m=mm;}catch(e){}
   const raw=new TextEncoder().encode(JSON.stringify(o));
   if(typeof CompressionStream==='function'){try{return 'z'+b64u(await shareStream(raw,CompressionStream));}catch(e){}}
@@ -1453,7 +1467,7 @@ async function shareEnc(){const d={},sk=new Set(['jS','jI','jAw','bS','bI','bAw'
 async function shareDec(code){code=String(code||'').trim();const k=code.indexOf('#s=');if(k>=0)code=code.slice(k+3);code=code.replace(/[^A-Za-z0-9_-]/g,'');if(!code||code.length>200000)return null;
   try{let u;if(code[0]==='z'){if(typeof DecompressionStream!=='function')return null;u=await shareStream(unb64u(code.slice(1)),DecompressionStream);}else if(code[0]==='p')u=unb64u(code.slice(1));else u=unb64u(code);
    const o=JSON.parse(new TextDecoder().decode(u));return o&&typeof o==='object'&&o.s&&typeof o.s==='object'?o:null;}catch(e){return null;}}
-function shareApply(o){const cl=JSON.parse(JSON.stringify(o.s));Object.keys(cl).forEach(k=>{if(!/^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(k)||k==='__proto__'||k==='constructor'||k==='prototype')delete cl[k];});Object.assign(state,cl);if(state.supMode!=='none')state.supMode='check';
+function shareApply(o){const cl=JSON.parse(JSON.stringify(o.s));Object.keys(cl).forEach(k=>{if(!/^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(k)||k==='__proto__'||k==='constructor'||k==='prototype')delete cl[k];});Object.keys(state).forEach(k=>{if(!(k in SHARE_DEF)&&typeof state[k]!=='function')delete state[k];});Object.assign(state,JSON.parse(JSON.stringify(SHARE_DEF)),cl);if(state.supMode!=='none')state.supMode='check';
   if(o.m&&typeof o.m==='object'){let m={};try{m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{};}catch(e){}['proj','site','by','lic'].forEach(k=>{if(typeof o.m[k]==='string')m[k]=o.m[k].slice(0,300);});window.SHARE_MEM=Object.assign({},m);try{localStorage.setItem(SHARE_META_KEY,JSON.stringify(m));}catch(e){}}return true;}
 function shareAfter(){state.mode='fix';const hi=$s('scheighttarget');if(hi)hi._ready=false;scDefaults(true);applyPly();applyLeg();['j','b'].forEach(k=>{if(!/^p[0-9]$/.test(state[k+'Sec'])&&state[k+'Sec']!=='custom')state[k+'Sec']=DEFSEC[k];applyBox(k);});save();build();scBuildPanel();}
 function shareMsg(t,bad){const e=document.getElementById('shareMsg');if(e){e.textContent=t;e.style.color=bad?'var(--bad)':'var(--ok)';}}
@@ -1616,7 +1630,7 @@ body.rpt-mode #rpt{display:block}
   const chk=[
    {n:'น้ำหนักรวมไม่น้อยกว่าขั้นต่ำตามมาตรฐาน',d:`W = ${N(o.W)} กก./ตร.ม.`,a:`≥ ${N(p.minw,0)} กก./ตร.ม.`,r:p.minw/o.W,ok:o.W>=p.minw},
    {n:`ไม้อัด ${scNames().ply} → ระยะห่างตง`,d:`${G(p.js)} ซม.`,a:`≤ ${N(o.pL)} ซม.`,r:p.js/o.pL,ok:p.js<=o.pL},
-   {n:`ตง ${scNames().j} → ระยะห่างคาน`,d:`${G(p.bs)} ซม.`,a:`≤ ${N(o.jL)} ซม.`,r:p.bs/o.jL,ok:p.bs<=o.jL},
+   {n:`ตง ${scNames().j} → ระยะห่างคาน`,d:`${G(o.jspan)} ซม.`,a:`≤ ${N(o.jL)} ซม.`,r:o.jspan/o.jL,ok:o.jspan<=o.jL},
    {n:`คาน ${scNames().b} → ระยะห่างขา`,d:`${G(p.ls)} ซม.`,a:`≤ ${N(o.bL)} ซม.`,r:p.ls/o.bL,ok:p.ls<=o.bL},
    {n:'น้ำหนักลงขา',d:`P = ${N(o.P,0)} กก./ขา`,a:`≤ ${N(p.cap,0)} กก./ขา`,r:o.P/p.cap,ok:o.P<=p.cap},
    {n:'ช่วงปรับ U-head / Jack base',d:`${p.uh} / ${p.jb} มม.`,a:`${SC_UHEAD.min}–${SC_UHEAD.max} มม.`,r:null,ok:rangeOk}
@@ -1666,7 +1680,7 @@ body.rpt-mode #rpt{display:block}
   const plyI=PLY.find(x=>x.id===p.plyThk),strI=STR.find(x=>x.id===p.plyStr);
   const wpT=M==='fix'?`${G(o.W)}×0.3048/100`:`${G(o.W)}/100`;
   const wjT=M==='fix'?`${G(o.W)}×${G(p.js/100)}/100`:`${G(o.W)}/100`;
-  const wbT=M==='fix'?`${G(o.W)}×${G(p.bs/100)}/100`:`${G(o.W)}/100`;
+  const wbT=M==='fix'?`${G(o.W)}×${G(o.trib/100)}/100`:`${G(o.W)}/100`;
   const dataTbl=`<table class="dtab">
    <tr><th class="l" colspan="2">น้ำหนักบรรทุก</th></tr>
    <tr><td class="l">ความหนาพื้นคอนกรีต</td><td>${G(p.t)} ม.</td></tr>
@@ -1688,11 +1702,11 @@ body.rpt-mode #rpt{display:block}
    ['2) การแอ่นตัว','L = ∛(145·I·E / (360·w))',`L = ∛((145×${G(p.pI)}×${G(p.pE)})/(360×${N(o.wp,3)}))`,o.pd],
    ['3) แรงเฉือน','L = (Fs / (0.625·w))·(Ib/Q)',`L = (${G(p.pFs)}/(0.625×${N(o.wp,3)}))×${G(p.pIbQ)}`,o.ps]],
    ctl3(o.pb,o.pd,o.ps,['การดัด','การแอ่นตัว','แรงเฉือน']),o.pL,p.js<=o.pL,`S = ${C(p.pS)} ซม.³ · I = ${C(p.pI)} ซม.⁴ · Ib/Q = ${C(p.pIbQ)} ซม.²<br>Fb = ${C(p.pFb)} กก./ซม.² · Fs = ${C(p.pFs)} กก./ซม.² · E = ${C(p.pE)} กก./ซม.²`)}
-  ${member(`ตง ${scNames().j} → ระยะห่างคาน`,'คานห่าง',p.bs,[
+  ${member(`ตง ${scNames().j} → ระยะห่างคาน`,'คานห่าง',o.jspan,[
    ['1) การดัด','L = 3.16 √(S·Fb / w)',`w = ${wjT} = ${N(o.wj,3)} กก./ซม.<br>L = 3.16 √((${G(p.jS)}×${N(o.Fb,0)})/${N(o.wj,3)})`,o.jb],
    ['2) การแอ่นตัว','L = ∛(145·I·E / (360·w))',`L = ∛((145×${G(p.jI)}×${G(p.Es)})/(360×${N(o.wj,3)}))`,o.jd],
    ['3) แรงเฉือน','L = 0.4·Fy·Aw / (0.625·w)',`L = (0.4×${G(p.Fy)}×${G(p.jAw)})/(0.625×${N(o.wj,3)})`,o.js_]],
-   ctl3(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน']),o.jL,p.bs<=o.jL,`S = ${C(p.jS)} ซม.³ · I = ${C(p.jI)} ซม.⁴ · Aw = ${C(p.jAw)} ซม.²`)}
+   ctl3(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน']),o.jL,o.jspan<=o.jL,`S = ${C(p.jS)} ซม.³ · I = ${C(p.jI)} ซม.⁴ · Aw = ${C(p.jAw)} ซม.²`)}
 ${foot(2)}`;
 
   /* หน้า 3 */
@@ -1710,7 +1724,7 @@ ${foot(2)}`;
    ctl3(o.bb,o.bd,o.bsh,['การดัด','การแอ่นตัว','แรงเฉือน']),o.bL,p.ls<=o.bL,`S = ${C(p.bS)} ซม.³ · I = ${C(p.bI)} ซม.⁴ · Aw = ${C(p.bAw)} ซม.²`)}
   <h2>น้ำหนักลงขาและฐานรองรับ</h2>
   <table class="wtab"><tr><th class="l" style="width:21%">ตรวจ</th><th class="l">การคำนวณ (สูตร → แทนค่า)</th><th style="width:17%">ผล</th><th style="width:14%">เทียบเกณฑ์</th></tr>
-  <tr><td class="l">พื้นที่รับน้ำหนักต่อขา</td><td class="fm">A = ระยะคาน × ระยะขา<br>A = ${G(p.bs/100)} × ${G(p.ls/100)}</td><td>${N(o.area)} ตร.ม.</td><td class="c">–</td></tr>
+  <tr><td class="l">พื้นที่รับน้ำหนักต่อขา</td><td class="fm">A = ระยะรับน้ำหนักคาน × ระยะขา<br>A = ${G(o.trib/100)} × ${G(p.ls/100)}</td><td>${N(o.area)} ตร.ม.</td><td class="c">–</td></tr>
   <tr><td class="l">น้ำหนักลงขา</td><td class="fm">P = A × W<br>P = ${N(o.area)} × ${N(o.W)}</td><td>${N(o.P,0)} กก.</td><td class="c">–</td></tr>
   ${colRows(p)}
   <tr><td class="l">เทียบกำลังรับของขา</td><td class="fm">P ≤ กำลังรับ<br>${N(o.P,0)} ≤ ${N(p.cap,0)} (เหลือ ${N(p.cap-o.P,0)} กก.)</td><td>${N(o.P/p.cap)}</td><td class="c">${rb(o.P<=p.cap)}</td></tr>
@@ -1718,7 +1732,7 @@ ${foot(2)}`;
   ${(p.supMode||'check')!=='none'&&p.soil>0?`<tr><td class="l">แผ่นรองบนดิน</td><td class="fm">A ≥ P / ดินรับได้<br>${N(o.P,0)} / ${G(p.soil)}</td><td>${N(o.plate,2)} ตร.ม.</td><td class="c">ด้านละ ≥ ${N(Math.sqrt(o.plate)*100,0)} ซม.</td></tr>`:''}</table>
   <div class="rpt-2col"><table><tr><th class="l" colspan="2">สรุประยะห่างที่ใช้</th></tr>
    <tr><td class="l">ตงห่าง</td><td>${G(p.js)} ซม.</td></tr>
-   <tr><td class="l">คานห่าง (= ช่วงตง)</td><td>${G(p.bs)} ซม.</td></tr>
+   <tr><td class="l">${o.gap!==p.bs?'คานห่าง / ช่องว่าง':'คานห่าง (= ช่วงตง)'}</td><td>${o.gap!==p.bs?`${G(p.bs)} / ${G(o.gap)} ซม.`:`${G(p.bs)} ซม.`}</td></tr>
    <tr><td class="l">ขาห่างตามแนวคาน (= ช่วงคาน)</td><td>${G(p.ls)} ซม.</td></tr>
    <tr><td class="l">กำลังรับของขา</td><td>${N(p.cap,0)} กก./ขา</td></tr>
    ${(p.supMode||'check')!=='none'?`<tr><td class="l">ดินรับได้</td><td>${N(p.soil,0)} กก./ตร.ม.</td></tr>`:''}</table></div>
