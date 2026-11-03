@@ -629,11 +629,13 @@ const PARAMS = [
  {id:'pFs', label:'Fs หน่วยแรงเฉือน', unit:'กก./ซม.²', v:3.09, note:'จาก APA Table 3'},
  {id:'pE',  label:'E โมดูลัสยืดหยุ่นไม้อัด', unit:'กก./ซม.²', v:105452.91, note:'จาก APA Table 3'},
  {id:'js',  label:'ระยะห่างตงที่เลือกใช้', unit:'ซม.', v:30, hint:'เลือกเองโดยดูผลข้อ 2 ว่าไม่เกินระยะที่ไม้อัดรับได้ นิยมปัดลงเป็นเลขกลม เช่น 20, 25, 30 ซม.'},
+ {spsel:'P'},
  {g:'3) ตงเหล็กกล่อง'},
  {selbox:'j'},
  {id:'Fy',  label:'กำลังคราก Fy ของเหล็ก', unit:'กก./ซม.²', v:2400, hint:'แนะนำให้ใช้ 2400 กก./ซม.²'},
  {id:'Es',  label:'E ของเหล็ก', unit:'กก./ซม.²', v:2040000, hint:'แนะนำให้ใช้ 2040000 กก./ซม.²'},
  {id:'fr',  label:'สัดส่วนหน่วยแรงดัดที่ยอมให้ (x Fy)', unit:'', v:0.6, hint:'แนะนำให้ใช้ 0.6'},
+ {spsel:'J'},
  {id:'jS',  label:'S ของตง (คำนวณอัตโนมัติ)', unit:'ซม.³', v:6.34},
  {id:'jI',  label:'I ของตง (คำนวณอัตโนมัติ)', unit:'ซม.⁴', v:15.86},
  {id:'jAw', label:'พื้นที่เอว Aw ของตง (คำนวณอัตโนมัติ)', unit:'ซม.²', v:2.3},
@@ -645,9 +647,11 @@ const PARAMS = [
  {id:'bI',  label:'I ของคาน (คำนวณอัตโนมัติ)', unit:'ซม.⁴', v:111.61},
  {id:'bAw', label:'พื้นที่เอว Aw ของคาน (คำนวณอัตโนมัติ)', unit:'ซม.²', v:3.6},
  {id:'ls',  lsel:true, label:'ความยาวนั่งร้านแนวนอน (ระยะห่างขาตามแนวคาน)', unit:'มม.', v:182.9, hint:'ความยาวนั่งร้านในแนวนอน เท่ากับระยะห่างระหว่างขาตามแนวคาน เลือกจากขนาดมาตรฐาน 1829 / 1524 / 1219 / 914 / 610 มม. หรือเลือก "กำหนดเอง" แล้วกรอกเป็นมม.'},
+ {spsel:'B'},
  {g:'5) ขานั่งร้านและดิน'},
  {selleg:true},
  {id:'cap', label:'กำลังรับน้ำหนักของขา', unit:'กก./ขา', v:2250, hint:'ใช้ค่าจากผู้ผลิตนั่งร้าน (ค่านี้ควรรวมตัวคูณความปลอดภัยแล้ว)'},
+ {reacsel:true},
  {supsel:true},
  {sup:'soil',id:'soil',label:'ดินรับน้ำหนักได้', unit:'กก./ตร.ม.', v:2000, hint:'ดินอ่อนหรือดินถมแน่นเต็มที่ รับได้ประมาณ 2 ตัน/ตร.ม. · ค่านี้ควรมาจากรายงานดินหรือวิศวกร ไม่ควรเดา'},
  {sup:'concrete',id:'fcc',label:'กำลังอัดคอนกรีตพื้นที่รองรับ fc′', unit:'กก./ซม.²', v:240, hint:'ใช้ค่ากำลังอัดทรงกระบอกของพื้นที่นั่งร้านวางอยู่ (ถ้าเป็นพื้นอายุน้อย ใช้ค่าตามอายุจริง)'},
@@ -660,7 +664,7 @@ const LS_KEY='scaffold_calc_v1';
 const app=document.getElementById('app');
 let state={mode:'fix'};
 PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});
-state.supMode='check';state.gapMode='auto';
+state.supMode='check';state.gapMode='auto';state.spP=3;state.spJ=3;state.spB=3;state.reac='on';
 
 /* ===== ตัวเลือกไม้อัด (ค่าเป็นหน่วยนิ้ว ต่อกว้าง 1 ฟุต ลายเสี้ยนขนานช่วง) ===== */
 const IN3=16.387064, IN4=41.623144, IN2=6.4516, PSI=0.0703070;
@@ -1256,35 +1260,41 @@ function devSetDefaults(){const snap=JSON.parse(JSON.stringify(state));try{local
 function devClearDefaults(){try{localStorage.removeItem(DEV_KEY);}catch(e){}alert('ล้างค่าเริ่มต้นที่ตั้งไว้แล้ว ปุ่ม คืนค่าเริ่มต้น จะกลับไปใช้ค่าของโปรแกรม');}
 function load(){try{const raw=localStorage.getItem(LS_KEY),s=JSON.parse(raw||'null');if(s)Object.assign(state,s);else{const d=devSnap();if(d)Object.assign(state,d);}}catch(e){}}
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
-function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.gapMode='auto';state.bsMode=undefined;state.plyThk='apa58';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
+function resetAll(){$s('scheighttarget')._ready=false;$s('scheightstatus').textContent='';state.lsSel=undefined;state.lsSel=undefined;scDefaults(false);scBuildPanel();PARAMS.forEach(p=>{if(p.id)state[p.id]=p.v;});state.mode='fix';state.supMode='check';state.gapMode='auto';state.spP=3;state.spJ=3;state.spB=3;state.reac='on';state.bsMode=undefined;state.plyThk='apa58';state.plyStr='s2w';applyPly();initBox('j');initBox('b');applyBox('j');applyBox('b');Object.assign(state,{legMode:'frame',legH:1700,legW:1219,legPos:'leg',legPipe:'q3',legShape:'round',pOD:42.7,pT:2.3,legL:170,legK:1,legKsel:'d',legBr:0,legFy:2400,legDerate:true});devApply();applyLeg();save();build();}
 
 const n=(x,d=2)=>Number.isFinite(x)?x.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const g=(x)=>{const s=Number(x);return Number.isFinite(s)?String(+s.toPrecision(7)):'?';};
 
 /* ===== แกนคำนวณ ===== */
+function SPC(k){const n=Number((typeof state==='object'&&state)['sp'+k])||3;
+  const c=n===1?{n:1,m:8,d:76.8,v:0.5,r:1,bfv:Math.sqrt(8)}:n===2?{n:2,m:8,d:185,v:0.625,r:1.25,bfv:Math.sqrt(8)}:{n:3,m:10,d:145,v:0.625,r:1.1,bfv:3.16};
+  return {n:c.n,m:String(c.m),d:String(c.d),v:String(c.v),b:(c.m===10?'3.16':c.bfv.toFixed(2)),c:c};}
+const spTok=h=>h.replace(/§(\w):(\w)§/g,(_,t,k)=>SPC(k)[t]);
 function compute(p,mode){
+  const cP=SPC('P').c,cJ=SPC('J').c,cB=SPC('B').c;
   const W_dl=p.gc*p.t, W=W_dl+p.ll+p.sw+p.fit;
   const FT=30.48;
   const wp = mode==='fix' ? W*(FT/100)/100 : W/100;   // กก./ซม. บนไม้อัด
   const wj = mode==='fix' ? W*(p.js/100)/100 : W/100; // บนตง
   const gapv=(p.gapMode==='custom'&&p.gap>0)?p.gap:p.bs, trib=(p.bs+gapv)/2, jspan=Math.max(p.bs,gapv);
-  const wb = mode==='fix' ? W*(trib/100)/100 : W/100; // บนคาน
-  const Fb = p.fr*p.Fy, Fv = 0.4*p.Fy, k=145/360;
-  const o={W_dl,W,wp,wj,wb,Fb,Fv,gap:gapv,trib,jspan};
-  o.pb=3.16*Math.sqrt(p.pS*p.pFb/wp);
-  o.pd=Math.cbrt(k*p.pI*p.pE/wp);
-  o.ps=(p.pFs/(0.625*wp))*p.pIbQ;
+  const rOn=p.reac==='on',fj=rOn?cJ.r:1,fb=rOn?cB.r:1;
+  const wb = (mode==='fix' ? W*(trib/100)/100 : W/100)*fj; // บนคาน
+  const Fb = p.fr*p.Fy, Fv = 0.4*p.Fy;
+  const o={W_dl,W,wp,wj,wb,Fb,Fv,gap:gapv,trib,jspan,fj,fb,fr:fj*fb};
+  o.pb=(cP.m===10?3.16:Math.sqrt(cP.m))*Math.sqrt(p.pS*p.pFb/wp);
+  o.pd=Math.cbrt(cP.d/360*p.pI*p.pE/wp);
+  o.ps=(p.pFs/(cP.v*wp))*p.pIbQ;
   o.pL=Math.min(o.pb,o.pd,o.ps);
-  o.jb=3.16*Math.sqrt(p.jS*Fb/wj);
-  o.jd=Math.cbrt(k*p.jI*p.Es/wj);
-  o.js_=Fv*p.jAw/(0.625*wj);
+  o.jb=(cJ.m===10?3.16:Math.sqrt(cJ.m))*Math.sqrt(p.jS*Fb/wj);
+  o.jd=Math.cbrt(cJ.d/360*p.jI*p.Es/wj);
+  o.js_=Fv*p.jAw/(cJ.v*wj);
   o.jL=Math.min(o.jb,o.jd,o.js_);
-  o.bb=3.16*Math.sqrt(p.bS*Fb/wb);
-  o.bd=Math.cbrt(k*p.bI*p.Es/wb);
-  o.bsh=Fv*p.bAw/(0.625*wb);
+  o.bb=(cB.m===10?3.16:Math.sqrt(cB.m))*Math.sqrt(p.bS*Fb/wb);
+  o.bd=Math.cbrt(cB.d/360*p.bI*p.Es/wb);
+  o.bsh=Fv*p.bAw/(cB.v*wb);
   o.bL=Math.min(o.bb,o.bd,o.bsh);
   o.area=trib*p.ls/1e4;
-  o.P=o.area*W;
+  o.P=o.area*W*o.fr;
   o.plate=o.P/p.soil;
   {const d=p.supH-p.supCov;o.sd=d;o.b0=4*(p.supA+d);o.vcA=0.53*Math.sqrt(p.fcc);o.Vc=d>0?o.vcA*o.b0*d:NaN;o.vP=d>0?o.P/(o.b0*d):NaN;}
   return o;
@@ -1313,6 +1323,21 @@ function lsHTML(p){
 }
 function scFW(){return state.bsMode==='custom'&&state.bs>0?state.bs*10:null;}
 function badParams(){const sm=state.supMode==='none'?'none':'check';return PARAMS.filter(p=>p.id&&!(p.sup&&sm==='none')&&!(Number.isFinite(state[p.id])&&state[p.id]<=1e7&&(state[p.id]>=0.01||(p.id==='cap'&&state.legMode!=='manual'&&state[p.id]===0)||(['fit','ll','sw','minw','supCov'].includes(p.id)&&state[p.id]===0)))).concat((state.layers||[]).map((l,i)=>[l,i]).filter(([l])=>!(l.h>0&&l.w>0)).map(([l,i])=>({label:'ขนาดนั่งร้านชั้น '+(state.layers.length-i)}))).concat(sm==='check'&&!(state.supH-state.supCov>0)?[{label:'ความหนาพื้นรองรับต้องมากกว่าระยะหุ้ม'}]:[]);}
+function spHTML(k){
+  const nm={P:'ไม้อัด',J:'ตง',B:'คาน'}[k],v=Number(state['sp'+k])||3;
+  const hint=k==='P'?'จำนวนช่วงที่ไม้อัดพาดต่อเนื่องข้ามตง':k==='J'?'จำนวนช่วงที่ตงพาดต่อเนื่องข้ามคาน':'จำนวนช่วงที่คานพาดต่อเนื่องข้ามขา';
+  return `<div class="field"><div class="frow"><div class="fmain"><label for="sp${k}">จำนวนช่วงต่อเนื่องของ${nm}</label>
+    <div class="row"><select id="sp${k}"><option value="3" ${v===3?'selected':''}>ต่อเนื่อง 3 ช่วงขึ้นไป</option><option value="2" ${v===2?'selected':''}>2 ช่วง</option><option value="1" ${v===1?'selected':''}>ช่วงเดียว (คานช่วงเดียว)</option></select></div></div>
+    <button type="button" class="ibtn" data-info="sp${k}" aria-label="คำแนะนำ จำนวนช่วงต่อเนื่อง${nm}" aria-expanded="false">i</button></div>
+    <div class="info" id="info_sp${k}"><p><b>คำแนะนำ:</b> ${hint} ค่าเริ่มต้นคือ 3 ช่วงขึ้นไป (โมเมนต์ wL²/10, แอ่นตัว wL⁴/145EI) ถ้าจริงมีน้อยกว่านั้นให้เลือกจำนวนช่วงที่ตรงจริง ค่าที่ยอมให้จะลดลง: 2 ช่วง โมเมนต์ wL²/8 แอ่นตัว wL⁴/185EI · ช่วงเดียว โมเมนต์ wL²/8 แอ่นตัว 5wL⁴/384EI (=wL⁴/76.8EI) แรงเฉือน 0.5wL</p></div></div>`;
+}
+function reacHTML(){
+  const on=state.reac==='on';
+  return `<div class="field"><div class="frow"><div class="fmain"><label for="reacSel">คูณปฏิกิริยาของตง/คานต่อเนื่อง ที่ขา</label>
+    <div class="row"><select id="reacSel"><option value="on" ${on?'selected':''}>คูณ (ตรวจขาในที่วิกฤต)</option><option value="off" ${on?'':'selected'}>ไม่คูณ (พื้นที่รับน้ำหนักล้วน)</option></select></div></div>
+    <button type="button" class="ibtn" data-info="reac" aria-label="คำแนะนำ ตัวคูณปฏิกิริยา" aria-expanded="false">i</button></div>
+    <div class="info" id="info_reac"><p><b>คำแนะนำ:</b> ตงและคานต่อเนื่องทำให้ที่รองรับตรงกลางรับแรงมากกว่าพื้นที่รับน้ำหนักล้วน ๆ (3 ช่วงขึ้นไป ×1.10, 2 ช่วง ×1.25, ช่วงเดียว ×1.00) เมื่อเลือก "คูณ" โปรแกรมจะคูณตัวคูณของตงกับคานเข้ากับน้ำหนักบนคานและแรงลงขา</p></div></div>`;
+}
 function gsHTML(p){
   const cu=state.gapMode==='custom';
   return `<div class="field"><div class="frow"><div class="fmain"><label for="gapSel">${p.label}</label>
@@ -1345,6 +1370,8 @@ function build(){
     if(p.lsel){h+=lsHTML(p);return;}
     if(p.bsel){h+=bsHTML(p);return;}
     if(p.gsel){h+=gsHTML(p);return;}
+    if(p.spsel){h+=spHTML(p.spsel);return;}
+    if(p.reacsel){h+=reacHTML();return;}
     if(p.g){if(open)h+=`</div></div><div class="resc" id="res_${sec}"></div></section>`;sec++;h+=`<section class="sec"><div class="card"><h2>${p.g}</h2><div class="grid">`;open=true;return;}
     const hasInfo=p.note||p.hint;
     h+=`<div class="field"><div class="frow"><div class="fmain"><label for="${p.id}">${p.label}</label>
@@ -1364,6 +1391,8 @@ function build(){
   });
   const dr=document.getElementById('legDerate');if(dr)dr.addEventListener('change',e=>{state.legDerate=e.target.checked;applyLeg();save();build();});
   const lsS=document.getElementById('lsSel');if(lsS)lsS.addEventListener('change',e=>{const v=e.target.value;state.lsSel=v;if(v!=='custom')state.ls=+v/10;save();build();});
+  ['P','J','B'].forEach(k=>{const e=document.getElementById('sp'+k);if(e)e.addEventListener('change',ev=>{state['sp'+k]=+ev.target.value;save();build();});});
+  const rcS=document.getElementById('reacSel');if(rcS)rcS.addEventListener('change',e=>{state.reac=e.target.value;save();build();});
   const gpS=document.getElementById('gapSel');if(gpS)gpS.addEventListener('change',e=>{state.gapMode=e.target.value;if(state.gapMode==='custom'&&!(state.gap>0))state.gap=state.bs>0?state.bs:120;save();build();});
   const bsS=document.getElementById('bsSel');if(bsS)bsS.addEventListener('change',e=>{state.bsMode=e.target.value;if(state.bsMode==='custom'&&!(state.bs>0))state.bs=120;save();build();});
   const lsI=document.getElementById('lsmm');if(lsI)lsI.addEventListener('input',e=>{state.ls=e.target.value===''?NaN:parseFloat(e.target.value)/10;state.lsSel='custom';save();render();});
@@ -1382,11 +1411,11 @@ window.__calcOpen=window.__calcOpen||{};
 function decorateResults(o,p){
   const none=state.supMode==='none',f=(x,d=2)=>n(x,d);
   const R=[
-   [o.W>=p.minw,`W = ${f(o.W,0)} กก./ตร.ม. (ขั้นต่ำ ${f(p.minw,0)})`],
-   [p.js<=o.pL,`ตงห่างได้ไม่เกิน ${f(o.pL)} ซม. · ใช้ ${g(p.js)} ซม.`],
-   [o.jspan<=o.jL,`คานห่างได้ไม่เกิน ${f(o.jL)} ซม. · ใช้ ${g(o.jspan)} ซม.`],
-   [p.ls<=o.bL,`ขาห่างได้ไม่เกิน ${f(o.bL)} ซม. · ใช้ ${g(p.ls)} ซม.`],
-   [o.P<=p.cap&&(none||o.P<=o.Vc),`แรงลงขา ${f(o.P,0)} กก. · ขารับได้ ${f(p.cap,0)} กก.`+(none?'':` · ทะลุพื้น ${f(o.Vc,0)} กก.`)]
+   [o.W>=p.minw,`W = ${f(o.W,0)} กก./ตร.ม. (ขั้นต่ำ ${f(p.minw,0)})`,`ปรับน้ำหนักจร/ตัวนั่งร้านให้รวมไม่น้อยกว่า ${f(p.minw,0)} กก./ตร.ม.`],
+   [p.js<=o.pL,`ตงห่างได้ไม่เกิน ${f(o.pL)} ซม. · ใช้ ${g(p.js)} ซม.`,`ลดระยะห่างตงให้ไม่เกิน ${Math.floor(o.pL*10)/10} ซม. หรือใช้ไม้อัดที่หนาขึ้น`],
+   [o.jspan<=o.jL,`คานห่างได้ไม่เกิน ${f(o.jL)} ซม. · ใช้ ${g(o.jspan)} ซม.`,`ลดระยะห่างคาน/นั่งร้านให้ไม่เกิน ${Math.floor(o.jL*10)/10} ซม. หรือใช้ตงที่ใหญ่ขึ้น`],
+   [p.ls<=o.bL,`ขาห่างได้ไม่เกิน ${f(o.bL)} ซม. · ใช้ ${g(p.ls)} ซม.`,`ลดระยะห่างขาให้ไม่เกิน ${Math.floor(o.bL*10)/10} ซม. หรือใช้คานที่ใหญ่ขึ้น`],
+   [o.P<=p.cap&&(none||o.P<=o.Vc),`แรงลงขา ${f(o.P,0)} กก. · ขารับได้ ${f(p.cap,0)} กก.`+(none?'':` · ทะลุพื้น ${f(o.Vc,0)} กก.`),(o.P>p.cap?`ลดพื้นที่รับน้ำหนักต่อขาเหลือไม่เกิน ${f(p.cap/(o.W*o.fr))} ตร.ม. (ตอนนี้ ${f(o.area)}) หรือใช้ขา/เฟรมที่รับได้มากขึ้น`:'')+(!none&&o.P>o.Vc?' เพิ่มแผ่นรองหรือความหนาพื้นที่รองรับ':'')]
   ];
   const wide=window.matchMedia&&matchMedia('(min-width:980px)').matches;
   R.forEach((r,i)=>{
@@ -1394,7 +1423,7 @@ function decorateResults(o,p){
     const h2=card.querySelector('h2');if(!h2)return;
     const hd=document.createElement('div');hd.className='rhead';card.insertBefore(hd,h2);hd.appendChild(h2);
     hd.insertAdjacentHTML('beforeend',badge(r[0]));
-    const hl=document.createElement('div');hl.className='rhl'+(r[0]?'':' bad');hl.textContent=r[1];hd.after(hl);
+    const hl=document.createElement('div');hl.className='rhl'+(r[0]?'':' bad');hl.textContent=r[1];if(!r[0]&&r[2]){const sg=document.createElement('div');sg.style.cssText='font-weight:400;font-size:14px;margin-top:2px';sg.textContent='แนวทางแก้: '+r[2];hl.appendChild(sg);}hd.after(hl);
     const det=document.createElement('details');det.className='calcd';
     const k='r'+(i+1);det.open=k in window.__calcOpen?window.__calcOpen[k]:wide;
     det.addEventListener('toggle',()=>{window.__calcOpen[k]=det.open;});
@@ -1422,9 +1451,9 @@ function render(){
     h+='<!--SEG-->'+`<div class="card"><h2>ผลที่ 2: ไม้อัด ${scNames().ply} → ระยะห่างตง</h2>`;
     h+=step('น้ำหนักบนแถบไม้อัด','w (กก./ซม. ของแถบกว้าง 1 ฟุต) ' + (M==='fix'?'= W × 0.3048 / 100':'= W / 100'),`w = ${wpTxt}`,`${n(o.wp,3)} กก./ซม. (แถบกว้าง 1 ฟุต)`);
     h+=`<div class="step"><b>ตรวจสอบระยะห่างสูงสุดเนื่องจาก</b></div>`;
-    h+=step('1) การดัด','จาก Fb = M/S = wL²/(10S)\nL = 3.16 √(S·Fb / w)',`L = 3.16 √((${g(p.pS)} × ${g(p.pFb)}) / ${n(o.wp,3)})`,`${n(o.pb)} ซม.`);
-    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(145EI) ≤ L/360\nL = ∛(145·I·E / (360·w))',`L = ∛((145 × ${g(p.pI)} × ${g(p.pE)}) / (360 × ${n(o.wp,3)}))`,`${n(o.pd)} ซม.`);
-    h+=step('3) แรงเฉือน','จาก Fs = VQ/(Ib) , V = 0.625wL\nL = (Fs / (0.625·w)) × (Ib/Q)',`L = (${g(p.pFs)} / (0.625 × ${n(o.wp,3)})) × ${g(p.pIbQ)}`,`${n(o.ps)} ซม.`);
+    h+=step('1) การดัด','จาก Fb = M/S = wL²/(§m:P§S)\nL = §b:P§ √(S·Fb / w)',`L = §b:P§ √((${g(p.pS)} × ${g(p.pFb)}) / ${n(o.wp,3)})`,`${n(o.pb)} ซม.`);
+    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(§d:P§EI) ≤ L/360\nL = ∛(§d:P§·I·E / (360·w))',`L = ∛((§d:P§ × ${g(p.pI)} × ${g(p.pE)}) / (360 × ${n(o.wp,3)}))`,`${n(o.pd)} ซม.`);
+    h+=step('3) แรงเฉือน','จาก Fs = VQ/(Ib) , V = §v:P§wL\nL = (Fs / (§v:P§·w)) × (Ib/Q)',`L = (${g(p.pFs)} / (§v:P§ × ${n(o.wp,3)})) × ${g(p.pIbQ)}`,`${n(o.ps)} ซม.`);
     h+=step(`ตรวจ: ตงห่าง ${g(p.js)} ซม.`,`L ที่ยอมให้ = ค่าต่ำสุดของข้อ 1), 2), 3) (คุมโดย: ${ctl(o.pb,o.pd,o.ps,['การดัด','การแอ่นตัว','แรงเฉือน'])})`,`${g(p.js)} ≤ ${n(o.pL)}`,`${n(o.pL)} ซม.`,p.js<=o.pL);
     h+=`</div>`;
     // 3 ตง
@@ -1432,18 +1461,18 @@ function render(){
     h+=step('หน่วยแรงดัดที่ยอมให้','Fb = สัดส่วน × Fy',`Fb = ${g(p.fr)} × ${g(p.Fy)}`,`${n(o.Fb,0)} กก./ซม.²`);
     h+=step('น้ำหนักบนตง','w (กก./ซม.) '+(M==='fix'?'= W × ระยะตง(ม.) / 100':'= W / 100'),M==='fix'?`w = ${g(o.W)} × ${g(p.js/100)} / 100 = ${n(o.wj,3)}`:`w = ${g(o.W)} / 100 = ${n(o.wj,3)}`,`${n(o.wj,3)} กก./ซม.`);
     h+=`<div class="step"><b>ตรวจสอบระยะห่างสูงสุดเนื่องจาก</b></div>`;
-    h+=step('1) การดัด','จาก Fb = M/S = wL²/(10S)\nL = 3.16 √(S·Fb / w)',`L = 3.16 √((${g(p.jS)} × ${n(o.Fb,0)}) / ${n(o.wj,3)})`,`${n(o.jb)} ซม.`);
-    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(145EI) ≤ L/360\nL = ∛(145·I·E / (360·w))',`L = ∛((145 × ${g(p.jI)} × ${g(p.Es)}) / (360 × ${n(o.wj,3)}))`,`${n(o.jd)} ซม.`);
-    h+=step('3) แรงเฉือน','จาก Fv = 0.4Fy = V/Aw , V = 0.625wL\nL = 0.4·Fy·Aw / (0.625·w)',`L = (0.4 × ${g(p.Fy)} × ${g(p.jAw)}) / (0.625 × ${n(o.wj,3)})`,`${n(o.js_)} ซม.`);
+    h+=step('1) การดัด','จาก Fb = M/S = wL²/(§m:J§S)\nL = §b:J§ √(S·Fb / w)',`L = §b:J§ √((${g(p.jS)} × ${n(o.Fb,0)}) / ${n(o.wj,3)})`,`${n(o.jb)} ซม.`);
+    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(§d:J§EI) ≤ L/360\nL = ∛(§d:J§·I·E / (360·w))',`L = ∛((§d:J§ × ${g(p.jI)} × ${g(p.Es)}) / (360 × ${n(o.wj,3)}))`,`${n(o.jd)} ซม.`);
+    h+=step('3) แรงเฉือน','จาก Fv = 0.4Fy = V/Aw , V = §v:J§wL\nL = 0.4·Fy·Aw / (§v:J§·w)',`L = (0.4 × ${g(p.Fy)} × ${g(p.jAw)}) / (§v:J§ × ${n(o.wj,3)})`,`${n(o.js_)} ซม.`);
     h+=step(`ตรวจ: ช่วงตงยาวสุด ${g(o.jspan)} ซม.`,`ยอมให้ = ค่าต่ำสุด (คุมโดย: ${ctl(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน'])})`,`${g(o.jspan)} ≤ ${n(o.jL)}`,`${n(o.jL)} ซม.`,o.jspan<=o.jL);
     h+=`</div>`;
     // 4 คาน
     h+='<!--SEG-->'+`<div class="card"><h2>ผลที่ 4: คาน ${scNames().b} → ระยะห่างขา</h2>`;
     h+=step('น้ำหนักบนคาน','w (กก./ซม.) '+(M==='fix'?'= W × ระยะรับน้ำหนักคาน(ม.) / 100':'= W / 100'),M==='fix'?`w = ${g(o.W)} × ${g(o.trib/100)} / 100 = ${n(o.wb,3)}`:`w = ${g(o.W)} / 100 = ${n(o.wb,3)}`,`${n(o.wb,3)} กก./ซม.`);
     h+=`<div class="step"><b>ตรวจสอบระยะห่างสูงสุดเนื่องจาก</b></div>`;
-    h+=step('1) การดัด','จาก Fb = M/S = wL²/(10S)\nL = 3.16 √(S·Fb / w)',`L = 3.16 √((${g(p.bS)} × ${n(o.Fb,0)}) / ${n(o.wb,3)})`,`${n(o.bb)} ซม.`);
-    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(145EI) ≤ L/360\nL = ∛(145·I·E / (360·w))',`L = ∛((145 × ${g(p.bI)} × ${g(p.Es)}) / (360 × ${n(o.wb,3)}))`,`${n(o.bd)} ซม.`);
-    h+=step('3) แรงเฉือน','จาก Fv = 0.4Fy = V/Aw , V = 0.625wL\nL = 0.4·Fy·Aw / (0.625·w)',`L = (0.4 × ${g(p.Fy)} × ${g(p.bAw)}) / (0.625 × ${n(o.wb,3)})`,`${n(o.bsh)} ซม.`);
+    h+=step('1) การดัด','จาก Fb = M/S = wL²/(§m:B§S)\nL = §b:B§ √(S·Fb / w)',`L = §b:B§ √((${g(p.bS)} × ${n(o.Fb,0)}) / ${n(o.wb,3)})`,`${n(o.bb)} ซม.`);
+    h+=step('2) การแอ่นตัว','จาก Δ = wL⁴/(§d:B§EI) ≤ L/360\nL = ∛(§d:B§·I·E / (360·w))',`L = ∛((§d:B§ × ${g(p.bI)} × ${g(p.Es)}) / (360 × ${n(o.wb,3)}))`,`${n(o.bd)} ซม.`);
+    h+=step('3) แรงเฉือน','จาก Fv = 0.4Fy = V/Aw , V = §v:B§wL\nL = 0.4·Fy·Aw / (§v:B§·w)',`L = (0.4 × ${g(p.Fy)} × ${g(p.bAw)}) / (§v:B§ × ${n(o.wb,3)})`,`${n(o.bsh)} ซม.`);
     h+=step(`ตรวจ: ขาห่าง ${g(p.ls)} ซม.`,`ยอมให้ = ค่าต่ำสุด (คุมโดย: ${ctl(o.bb,o.bd,o.bsh,['การดัด','การแอ่นตัว','แรงเฉือน'])})`,`${g(p.ls)} ≤ ${n(o.bL)}`,`${n(o.bL)} ซม.`,p.ls<=o.bL);
     h+=`</div>`;
     // 5 ขา
@@ -1460,13 +1489,13 @@ function render(){
       h+=step('กำลังรับแรงอัดต่อขา','Pa = Fa × A',`Pa = ${n(c.Fa,0)} × ${n(c.A)}`,c.ok?`${n(c.P,0)} กก./ขา`:`ไม่ผ่าน: KL/r เกิน 200 จึงใช้กำลังรับ = 0 กก.`,c.ok);
     }}
     if(p.legMode==='frame')h+=step('กำลังรับของขาที่ใช้ตรวจ','ใช้ค่าที่น้อยกว่าระหว่างกำลังตามแคตตาล็อกกับกำลังโก่งเดาะ',`min( ${Number.isFinite(p.catCap)?n(p.catCap,0):'—'} , ${p.legDerate&&Number.isFinite(p.buckCap)?n(p.buckCap,0):'ไม่ตัดทอน'} )`,Number.isFinite(p.cap)?`${n(p.cap,0)} กก./ขา`:'ไม่มีข้อมูล');
-    h+=step('น้ำหนักลงขา','P = A × W',`P = ${n(o.area)} × ${n(o.W)}`,`${n(o.P,0)} กก.`,o.P<=p.cap);
+    h+=step('น้ำหนักลงขา',o.fr!==1?'P = A × W × ตัวคูณปฏิกิริยา':'P = A × W',`P = ${n(o.area)} × ${n(o.W)}${o.fr!==1?` × ${n(o.fj)} × ${n(o.fb)}`:''}`,`${n(o.P,0)} กก.`,o.P<=p.cap);
     h+=step(`เทียบกำลังรับของขา ${n(p.cap,0)} กก.`,'P ≤ กำลังรับ',`${n(o.P,0)} ≤ ${n(p.cap,0)}`,`เหลือ ${n(p.cap-o.P,0)} กก.`,o.P<=p.cap);
     if((p.supMode||'check')!=='none')h+=step('แรงเฉือนทะลุพื้นคอนกรีตใต้ขา (WSD)','P ≤ Vc = 0.53 √fc′ · b0 · d , b0 = 4(a + d)',`d = ${g(p.supH)} − ${g(p.supCov)} = ${n(o.sd)} ซม.<br>b0 = 4(${g(p.supA)} + ${n(o.sd)}) = ${n(o.b0)} ซม.<br>Vc = 0.53 √${g(p.fcc)} × ${n(o.b0)} × ${n(o.sd)} = ${n(o.Vc,0)} กก.`,`P = ${n(o.P,0)} ${o.P<=o.Vc?'≤':'>'} Vc = ${n(o.Vc,0)} กก.`,o.P<=o.Vc);
     if((p.supMode||'check')==='none')h+=`<div class="warnbox" style="margin:8px 0">ไม่ได้ตรวจฐานรองรับ ต้องตรวจเองก่อนใช้งาน</div>`;
     if((p.supMode||'check')!=='none')h+=step('แผ่นรองบนดิน','พื้นที่ขั้นต่ำ = P / ดินรับได้',`${n(o.P,0)} / ${g(p.soil)}`,`${n(o.plate,2)} ตร.ม. (แผ่นจัตุรัสด้านละ ${n(Math.sqrt(o.plate)*100,0)} ซม.)`);
     h+=`</div>`;
-    const parts=h.split('<!--SEG-->').slice(1);for(let i=0;i<5;i++)document.getElementById('res_'+(i+1)).innerHTML=parts[i]||'';document.getElementById('cmp').innerHTML='';try{decorateResults(o,p);}catch(e){}
+    h=spTok(h);const parts=h.split('<!--SEG-->').slice(1);for(let i=0;i<5;i++)document.getElementById('res_'+(i+1)).innerHTML=parts[i]||'';document.getElementById('cmp').innerHTML='';try{decorateResults(o,p);}catch(e){}
   }catch(e){
     out.innerHTML=`<div class="err">คำนวณไม่สำเร็จ<br><button onclick="build()">ลองใหม่</button></div>`;
   }
@@ -1636,11 +1665,12 @@ body.rpt-mode #rpt{display:block}
  /* ---------- ตารางคำนวณของชิ้นส่วนหนึ่ง ---------- */
  function member(title,spacingTxt,spacing,rows,ctlName,L,ok,info){
   const isPly=title.indexOf("ไม้อัด")>=0;
-  const BASEF={"1s":"Fb = M/S = wL²/(10S)","1p":"Fb = M/S = wL²/(10S)","2s":"Δ = wL⁴/(145EI) ≤ L/360","2p":"Δ = wL⁴/(145EI) ≤ L/360","3p":"Fs = VQ/(Ib) , V = 0.625wL","3s":"Fv = 0.4Fy = V/Aw , V = 0.625wL"};
+  const BASEF={"1s":"Fb = M/S = wL²/(§m:@§S)","1p":"Fb = M/S = wL²/(§m:@§S)","2s":"Δ = wL⁴/(§d:@§EI) ≤ L/360","2p":"Δ = wL⁴/(§d:@§EI) ≤ L/360","3p":"Fs = VQ/(Ib) , V = §v:@§wL","3s":"Fv = 0.4Fy = V/Aw , V = §v:@§wL"};
   let h=`<h2>${title}</h2>${info?`<div class="rpt-info">${info}</div>`:''}<table><tr><th class="l" style="width:17%">ตรวจ</th><th class="l">การคำนวณ (สูตร → แทนค่า)</th><th style="width:13%">ระยะที่ยอมให้ (ซม.)</th><th style="width:11%">เทียบ ${esc(spacingTxt)} ${G(spacing)} ซม.</th></tr>`;
   rows.forEach(r=>{h+=`<tr><td class="l">${r[0]}</td><td class="fm">${BASEF[r[0].charAt(0)+(isPly?"p":"s")]?`<span class="bf">${BASEF[r[0].charAt(0)+(isPly?"p":"s")]}</span> → `:""}${r[1]}<br>${r[2]}</td><td>${N(r[3])}</td><td class="c">${rb(r[3]>=spacing)}</td></tr>`;});
   h+=`<tr><td class="l" colspan="2"><b>สรุป</b> ระยะที่ใช้ ${G(spacing)} ≤ ระยะที่ยอมให้ต่ำสุด ${N(L)} ซม. (คุมโดย ${ctlName})</td><td><b>${N(L)}</b></td><td class="c">${rb(ok)}</td></tr></table>`;
-  return h;
+  const K=isPly?'P':(spacingTxt==='คานห่าง'?'J':'B');
+  return h.replace(/§(\w):@§/g,(_,t)=>SPC(K)[t]);
  }
 
  function colRows(p){
@@ -1679,6 +1709,7 @@ body.rpt-mode #rpt{display:block}
   if(bad.length){box.innerHTML='<h2>สรุปผลการตรวจ</h2><p class="note">ข้อมูลไม่ครบ: '+bad.map(b=>esc(b.label)).join(' · ')+'</p>';return;}
   const chk=checks(state,compute(state,state.mode)),nBad=chk.filter(c=>!c.ok).length;
   box.innerHTML=`<h2>สรุปผลการตรวจ ${nBad?`<span class="rb bad">✗ ไม่ผ่าน ${nBad} รายการ</span>`:'<span class="rb ok">✓ ผ่านทุกรายการ</span>'}</h2>${state.supMode==='none'?'<div class="warnbox" style="margin:0 0 8px;padding:8px 12px">ไม่ได้ตรวจฐานรองรับ (ดิน/พื้นคอนกรีต) ต้องตรวจเองก่อนใช้งาน</div>':''}
+  <div class="warnbox" style="margin:8px 0;padding:8px 12px"><b>ขอบเขตการตรวจ</b>ไม่ได้ตรวจแรงด้านข้าง การค้ำยัน/เสถียรภาพของโครงนั่งร้าน ลม การทรุดตัวของฐาน และการโก่งเฉพาะที่ของเหล็กผนังบาง ต้องให้วิศวกรตรวจเพิ่มก่อนใช้งานจริง</div>
   <div class="sumwrap"><table class="sumtbl"><tr><th>#</th><th class="l">รายการตรวจ</th><th>ค่าที่ใช้</th><th>เกณฑ์ที่ยอมให้</th><th>อัตราส่วน</th><th>ผล</th></tr>${chk.map((c,i)=>`<tr><td class="c">${i+1}</td><td class="l">${c.n}</td><td>${c.d}</td><td>${c.a}</td><td>${c.r===null?'–':N(c.r)}</td><td class="c">${c.info?'–':rb(c.ok)}</td></tr>`).join('')}</table></div>`;
  }
  window.scWebSummary=webSummary;
@@ -1732,14 +1763,14 @@ body.rpt-mode #rpt{display:block}
 
   <h2>ข้อมูลที่ใช้คำนวณ</h2>${dataTbl}
   ${member(`ไม้อัด ${scNames().ply} → ระยะห่างตง`,'ตงห่าง',p.js,[
-   ['1) การดัด','L = 3.16 √(S·Fb / w)',`w = ${wpT} = ${N(o.wp,3)} กก./ซม.<br>L = 3.16 √((${G(p.pS)}×${G(p.pFb)})/${N(o.wp,3)})`,o.pb],
-   ['2) การแอ่นตัว','L = ∛(145·I·E / (360·w))',`L = ∛((145×${G(p.pI)}×${G(p.pE)})/(360×${N(o.wp,3)}))`,o.pd],
-   ['3) แรงเฉือน','L = (Fs / (0.625·w))·(Ib/Q)',`L = (${G(p.pFs)}/(0.625×${N(o.wp,3)}))×${G(p.pIbQ)}`,o.ps]],
+   ['1) การดัด','L = §b:P§ √(S·Fb / w)',`w = ${wpT} = ${N(o.wp,3)} กก./ซม.<br>L = §b:P§ √((${G(p.pS)}×${G(p.pFb)})/${N(o.wp,3)})`,o.pb],
+   ['2) การแอ่นตัว','L = ∛(§d:P§·I·E / (360·w))',`L = ∛((§d:P§×${G(p.pI)}×${G(p.pE)})/(360×${N(o.wp,3)}))`,o.pd],
+   ['3) แรงเฉือน','L = (Fs / (§v:P§·w))·(Ib/Q)',`L = (${G(p.pFs)}/(§v:P§×${N(o.wp,3)}))×${G(p.pIbQ)}`,o.ps]],
    ctl3(o.pb,o.pd,o.ps,['การดัด','การแอ่นตัว','แรงเฉือน']),o.pL,p.js<=o.pL,`S = ${C(p.pS)} ซม.³ · I = ${C(p.pI)} ซม.⁴ · Ib/Q = ${C(p.pIbQ)} ซม.²<br>Fb = ${C(p.pFb)} กก./ซม.² · Fs = ${C(p.pFs)} กก./ซม.² · E = ${C(p.pE)} กก./ซม.²`)}
   ${member(`ตง ${scNames().j} → ระยะห่างคาน`,'คานห่าง',o.jspan,[
-   ['1) การดัด','L = 3.16 √(S·Fb / w)',`w = ${wjT} = ${N(o.wj,3)} กก./ซม.<br>L = 3.16 √((${G(p.jS)}×${N(o.Fb,0)})/${N(o.wj,3)})`,o.jb],
-   ['2) การแอ่นตัว','L = ∛(145·I·E / (360·w))',`L = ∛((145×${G(p.jI)}×${G(p.Es)})/(360×${N(o.wj,3)}))`,o.jd],
-   ['3) แรงเฉือน','L = 0.4·Fy·Aw / (0.625·w)',`L = (0.4×${G(p.Fy)}×${G(p.jAw)})/(0.625×${N(o.wj,3)})`,o.js_]],
+   ['1) การดัด','L = §b:J§ √(S·Fb / w)',`w = ${wjT} = ${N(o.wj,3)} กก./ซม.<br>L = §b:J§ √((${G(p.jS)}×${N(o.Fb,0)})/${N(o.wj,3)})`,o.jb],
+   ['2) การแอ่นตัว','L = ∛(§d:J§·I·E / (360·w))',`L = ∛((§d:J§×${G(p.jI)}×${G(p.Es)})/(360×${N(o.wj,3)}))`,o.jd],
+   ['3) แรงเฉือน','L = 0.4·Fy·Aw / (§v:J§·w)',`L = (0.4×${G(p.Fy)}×${G(p.jAw)})/(§v:J§×${N(o.wj,3)})`,o.js_]],
    ctl3(o.jb,o.jd,o.js_,['การดัด','การแอ่นตัว','แรงเฉือน']),o.jL,o.jspan<=o.jL,`S = ${C(p.jS)} ซม.³ · I = ${C(p.jI)} ซม.⁴ · Aw = ${C(p.jAw)} ซม.²`)}
 ${foot(2)}`;
 
@@ -1752,14 +1783,14 @@ ${foot(2)}`;
   notes.push('ไม่ได้ตรวจเสถียรภาพด้านข้างและการค้ำยัน (bracing) ของชุดนั่งร้าน การต่อชั้นในภาพเป็นเพียงภาพประกอบ');
   let p3=`<div class="rpt-head"><h1>รายการคำนวณนั่งร้าน</h1>${hd2}</div>
   ${member(`คาน ${scNames().b} → ระยะห่างขา`,'ขาห่าง',p.ls,[
-   ['1) การดัด','L = 3.16 √(S·Fb / w)',`w = ${wbT} = ${N(o.wb,3)} กก./ซม.<br>L = 3.16 √((${G(p.bS)}×${N(o.Fb,0)})/${N(o.wb,3)})`,o.bb],
-   ['2) การแอ่นตัว','L = ∛(145·I·E / (360·w))',`L = ∛((145×${G(p.bI)}×${G(p.Es)})/(360×${N(o.wb,3)}))`,o.bd],
-   ['3) แรงเฉือน','L = 0.4·Fy·Aw / (0.625·w)',`L = (0.4×${G(p.Fy)}×${G(p.bAw)})/(0.625×${N(o.wb,3)})`,o.bsh]],
+   ['1) การดัด','L = §b:B§ √(S·Fb / w)',`w = ${wbT} = ${N(o.wb,3)} กก./ซม.<br>L = §b:B§ √((${G(p.bS)}×${N(o.Fb,0)})/${N(o.wb,3)})`,o.bb],
+   ['2) การแอ่นตัว','L = ∛(§d:B§·I·E / (360·w))',`L = ∛((§d:B§×${G(p.bI)}×${G(p.Es)})/(360×${N(o.wb,3)}))`,o.bd],
+   ['3) แรงเฉือน','L = 0.4·Fy·Aw / (§v:B§·w)',`L = (0.4×${G(p.Fy)}×${G(p.bAw)})/(§v:B§×${N(o.wb,3)})`,o.bsh]],
    ctl3(o.bb,o.bd,o.bsh,['การดัด','การแอ่นตัว','แรงเฉือน']),o.bL,p.ls<=o.bL,`S = ${C(p.bS)} ซม.³ · I = ${C(p.bI)} ซม.⁴ · Aw = ${C(p.bAw)} ซม.²`)}
   <h2>น้ำหนักลงขาและฐานรองรับ</h2>
   <table class="wtab"><tr><th class="l" style="width:21%">ตรวจ</th><th class="l">การคำนวณ (สูตร → แทนค่า)</th><th style="width:17%">ผล</th><th style="width:14%">เทียบเกณฑ์</th></tr>
   <tr><td class="l">พื้นที่รับน้ำหนักต่อขา</td><td class="fm">A = ระยะรับน้ำหนักคาน × ระยะขา<br>A = ${G(o.trib/100)} × ${G(p.ls/100)}</td><td>${N(o.area)} ตร.ม.</td><td class="c">–</td></tr>
-  <tr><td class="l">น้ำหนักลงขา</td><td class="fm">P = A × W<br>P = ${N(o.area)} × ${N(o.W)}</td><td>${N(o.P,0)} กก.</td><td class="c">–</td></tr>
+  <tr><td class="l">น้ำหนักลงขา</td><td class="fm">P = A × W${o.fr!==1?' × ตัวคูณ':''}<br>P = ${N(o.area)} × ${N(o.W)}${o.fr!==1?` × ${N(o.fj)} × ${N(o.fb)}`:''}</td><td>${N(o.P,0)} กก.</td><td class="c">–</td></tr>
   ${colRows(p)}
   <tr><td class="l">เทียบกำลังรับของขา</td><td class="fm">P ≤ กำลังรับ<br>${N(o.P,0)} ≤ ${N(p.cap,0)} (เหลือ ${N(p.cap-o.P,0)} กก.)</td><td>${N(o.P/p.cap)}</td><td class="c">${rb(o.P<=p.cap)}</td></tr>
   ${(p.supMode||'check')!=='none'&&Number.isFinite(o.Vc)?`<tr><td class="l">แรงเฉือนทะลุพื้นคอนกรีตใต้ขา (WSD)</td><td class="fm">P ≤ Vc = 0.53 √fc′ · b0 · d , b0 = 4(a + d)<br>d = ${G(p.supH)} − ${G(p.supCov)} = ${N(o.sd)} ซม. , b0 = ${N(o.b0)} ซม.<br>Vc = 0.53 √${G(p.fcc)} × ${N(o.b0)} × ${N(o.sd)}</td><td>${N(o.Vc,0)} กก.</td><td class="c">${rb(o.P<=o.Vc)}</td></tr>`:''}
@@ -1769,9 +1800,10 @@ ${foot(2)}`;
    <tr><td class="l">${o.gap!==p.bs?'คานห่าง / ช่องว่าง':'คานห่าง (= ช่วงตง)'}</td><td>${o.gap!==p.bs?`${G(p.bs)} / ${G(o.gap)} ซม.`:`${G(p.bs)} ซม.`}</td></tr>
    <tr><td class="l">ขาห่างตามแนวคาน (= ช่วงคาน)</td><td>${G(p.ls)} ซม.</td></tr>
    <tr><td class="l">กำลังรับของขา</td><td>${N(p.cap,0)} กก./ขา</td></tr>
-   ${(p.supMode||'check')!=='none'?`<tr><td class="l">ดินรับได้</td><td>${N(p.soil,0)} กก./ตร.ม.</td></tr>`:''}</table></div>
+   ${(p.supMode||'check')!=='none'?`<tr><td class="l">ดินรับได้</td><td>${N(p.soil,0)} กก./ตร.ม.</td></tr>`:''}</table>
+  <div class="rpt-note"><b>สมมติฐานและขอบเขต</b><br>ช่วงต่อเนื่อง ไม้อัด/ตง/คาน = ${SPC('P').n}/${SPC('J').n}/${SPC('B').n} ช่วง · ${o.fr!==1?`คูณปฏิกิริยาที่ขาใน ×${N(o.fj)}×${N(o.fb)} = ${N(o.fr)}`:'ไม่คูณปฏิกิริยาของตง/คาน (ขาในอาจรับมากกว่านี้)'}<br>ไม่ได้ตรวจ: แรงด้านข้าง การค้ำยัน/เสถียรภาพของโครงนั่งร้าน ลม การทรุดตัวของฐาน และการโก่งเฉพาะที่ของเหล็กผนังบาง ต้องตรวจเพิ่มก่อนใช้งานจริง</div></div>
   ${signBlock('')}${foot(3)}`;
-  return {pages:[p1,p2,p3]};
+  return {pages:[spTok(p1),spTok(p2),spTok(p3)]};
  }
 
  function open(){
