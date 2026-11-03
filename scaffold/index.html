@@ -1603,8 +1603,9 @@ body.rpt-mode #rpt{display:block}
   if(p.legMode==='pipe'||p.legDerate){const c=legCalc();
    if(c){
     h+=`<tr><td class="l">ความสูงเสา / ท่อ</td><td class="fm">U-head + เฟรม + Jack base<br>L = ${G(p.legL)} ซม. · ${c.sq?'□':'Ø'}${N(c.D*10,1)}×${N(c.t*10,1)} มม. · จุดยึดกลาง ${c.nb} จุด</td><td>A ${N(c.A)} ซม.²<br>r ${N(c.r)} ซม.</td><td class="c">–</td></tr>`;
-    h+=`<tr><td class="l">ความเพรียว (ต้องไม่เกิน 200)</td><td class="fm">KL/r ≤ 200<br>(${G(c.K)} × ${N(c.L,1)}) / ${N(c.r)}</td><td>${N(c.lam,1)}</td><td class="c">${c.info?'–':rb(c.ok)}</td></tr>`;
-    h+=`<tr><td class="l">กำลังรับแรงอัดต่อขา (ASD)</td><td class="fm">Pa = Fa × A<br>Fa ${N(c.Fa,0)} กก./ซม.² · Cc ${N(c.Cc,1)}</td><td>${c.ok?N(c.P,0):'0'} กก./ขา</td><td class="c">–</td></tr>`;
+    h+=`<tr><td class="l">ความเพรียว</td><td class="fm">KL/r ≤ 200<br>(${G(c.K)} × ${N(c.L,1)}) / ${N(c.r)}</td><td>${N(c.lam,1)}</td><td class="c">${c.info?'–':rb(c.ok)}</td></tr>`;
+    h+=`<tr><td class="l">แรงอัดที่ยอมให้ Fa</td><td class="fm">Cc = √(2π²E/Fy) = ${N(c.Cc,1)} ; ${c.lam<=c.Cc?`q = ${N(c.q,3)} <br>FS = 5/3+3q/8−q³/8 = ${N(c.FS,3)} ; Fa = (1−q²/2)Fy/FS`:`Fa = 12π²E/[23(KL/r)²] , FS = 23/12`}</td><td>${N(c.Fa,0)} กก./ซม.²</td><td class="c">–</td></tr>`;
+    h+=`<tr><td class="l">กำลังรับต่อขา Pa</td><td class="fm">Pa = Fa × A = ${N(c.Fa,0)} × ${N(c.A)}</td><td>${c.ok?N(c.P,0):'0'} กก./ขา</td><td class="c">–</td></tr>`;
    }}
   return h;
  }
