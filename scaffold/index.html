@@ -11,9 +11,17 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Sarabun","Noto Sans Thai",system-ui,sans-serif}
 .wrap{max-width:860px;margin:0 auto;padding:16px}
+#statusbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 -16px 8px;padding:8px 16px;background:var(--card);border-bottom:2px solid var(--line);font-weight:700;cursor:pointer}
+#statusbar.ok{border-bottom-color:var(--ok);background:var(--okbg);color:var(--ok)}#statusbar.bad{border-bottom-color:var(--bad);background:var(--badbg);color:var(--bad)}
+#statusbar small{font-weight:400;color:var(--ink);font-size:13px}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.rhead h2{margin:0}
+.rhl{margin:6px 0 4px;padding:8px 10px;border-radius:8px;font-weight:700;font-size:16px;background:var(--okbg);color:var(--ok)}.rhl.bad{background:var(--badbg);color:var(--bad)}
+details.calcd{margin-top:6px}details.calcd>summary::before{content:'▸';margin-right:6px}details.calcd[open]>summary::before{content:'▾'}
+details.calcd>summary{cursor:pointer;min-height:36px;display:flex;align-items:center;color:var(--accent);font-weight:700}
+@media print{#statusbar{display:none}}
 .sec{display:grid;grid-template-columns:minmax(0,1fr);gap:0 14px;align-items:start}
 .sec>.card{margin:12px 0}
-@media(min-width:980px){.wrap{max-width:1360px}.sec{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sec .resc{position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto}}
+@media(min-width:980px){.wrap{max-width:1360px}.sec{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sec .resc{position:sticky;top:52px;max-height:calc(100vh - 60px);overflow:auto}}
 @media print{.sec{display:block}.sec .resc{position:static;max-height:none}}
 h1{font-size:22px;margin:8px 0 4px}
 h2{font-size:18px;margin:0 0 10px}
@@ -131,6 +139,7 @@ details.warnbox{padding:6px 12px;margin:6px 0}details.warnbox summary{cursor:poi
 </head>
 <body>
 <div class="wrap">
+  <div id="statusbar" class="noprint" role="status" aria-live="polite" onclick="(document.getElementById('websum')||document.body).scrollIntoView({behavior:'smooth'})"></div>
   <div class="pghead"><h1>รายการคำนวณนั่งร้าน</h1><span class="sm">ด้วยวิธี ASD (Allowable Stress Design)</span></div>
   <div class="bar noprint">
     <button onclick="resetAll()">คืนค่าเริ่มต้น</button>
@@ -1369,6 +1378,31 @@ function build(){
   render();
 }
 
+window.__calcOpen=window.__calcOpen||{};
+function decorateResults(o,p){
+  const none=state.supMode==='none',f=(x,d=2)=>n(x,d);
+  const R=[
+   [o.W>=p.minw,`W = ${f(o.W,0)} กก./ตร.ม. (ขั้นต่ำ ${f(p.minw,0)})`],
+   [p.js<=o.pL,`ตงห่างได้ไม่เกิน ${f(o.pL)} ซม. · ใช้ ${g(p.js)} ซม.`],
+   [o.jspan<=o.jL,`คานห่างได้ไม่เกิน ${f(o.jL)} ซม. · ใช้ ${g(o.jspan)} ซม.`],
+   [p.ls<=o.bL,`ขาห่างได้ไม่เกิน ${f(o.bL)} ซม. · ใช้ ${g(p.ls)} ซม.`],
+   [o.P<=p.cap&&(none||o.P<=o.Vc),`แรงลงขา ${f(o.P,0)} กก. · ขารับได้ ${f(p.cap,0)} กก.`+(none?'':` · ทะลุพื้น ${f(o.Vc,0)} กก.`)]
+  ];
+  const wide=window.matchMedia&&matchMedia('(min-width:980px)').matches;
+  R.forEach((r,i)=>{
+    const card=document.querySelector('#res_'+(i+1)+' .card');if(!card)return;
+    const h2=card.querySelector('h2');if(!h2)return;
+    const hd=document.createElement('div');hd.className='rhead';card.insertBefore(hd,h2);hd.appendChild(h2);
+    hd.insertAdjacentHTML('beforeend',badge(r[0]));
+    const hl=document.createElement('div');hl.className='rhl'+(r[0]?'':' bad');hl.textContent=r[1];hd.after(hl);
+    const det=document.createElement('details');det.className='calcd';
+    const k='r'+(i+1);det.open=k in window.__calcOpen?window.__calcOpen[k]:wide;
+    det.addEventListener('toggle',()=>{window.__calcOpen[k]=det.open;});
+    det.innerHTML='<summary>ขั้นตอนการคำนวณ</summary>';
+    [...card.children].filter(e=>e!==hd&&e!==hl).forEach(e=>det.appendChild(e));
+    card.appendChild(det);
+  });
+}
 function render(){
   const out=document.getElementById('msg');for(let i=1;i<=5;i++){const e=document.getElementById('res_'+i);if(e)e.innerHTML='';}document.getElementById('cmp').innerHTML='';out.innerHTML='';
   try{drawSection();}catch(e){$s('scsvg').innerHTML='<div class="err">แสดงภาพไม่สำเร็จ <button onclick="build()">ลองใหม่</button></div>';}
@@ -1432,7 +1466,7 @@ function render(){
     if((p.supMode||'check')==='none')h+=`<div class="warnbox" style="margin:8px 0">ไม่ได้ตรวจฐานรองรับ ต้องตรวจเองก่อนใช้งาน</div>`;
     if((p.supMode||'check')!=='none')h+=step('แผ่นรองบนดิน','พื้นที่ขั้นต่ำ = P / ดินรับได้',`${n(o.P,0)} / ${g(p.soil)}`,`${n(o.plate,2)} ตร.ม. (แผ่นจัตุรัสด้านละ ${n(Math.sqrt(o.plate)*100,0)} ซม.)`);
     h+=`</div>`;
-    const parts=h.split('<!--SEG-->').slice(1);for(let i=0;i<5;i++)document.getElementById('res_'+(i+1)).innerHTML=parts[i]||'';document.getElementById('cmp').innerHTML='';
+    const parts=h.split('<!--SEG-->').slice(1);for(let i=0;i<5;i++)document.getElementById('res_'+(i+1)).innerHTML=parts[i]||'';document.getElementById('cmp').innerHTML='';try{decorateResults(o,p);}catch(e){}
   }catch(e){
     out.innerHTML=`<div class="err">คำนวณไม่สำเร็จ<br><button onclick="build()">ลองใหม่</button></div>`;
   }
@@ -1792,7 +1826,7 @@ ${foot(2)}`;
   const de=document.getElementById('pj_date');if(de){de.value=m.dateISO||iso;de.addEventListener('input',()=>{const x=ld();x.dateISO=de.value;x.date=th(de.value);sv(x);});
     if(m.date===undefined&&!m.dateISO){const x=ld();x.dateISO=iso;x.date=th(iso);sv(x);}}
 })();
-(function(){const _r=render;render=function(){_r.apply(this,arguments);try{window.scWebSummary();}catch(e){}};try{window.scWebSummary();}catch(e){}})();
+(function(){const _r=render;const sb=()=>{const b=document.getElementById('statusbar'),w=document.getElementById('websum');if(!b||!w)return;const rb=w.querySelector('h2 .rb'),bn=w.querySelector('.note');b.className='noprint '+(rb?(rb.classList.contains('ok')?'ok':'bad'):'');b.innerHTML=rb?`<span>${rb.textContent}</span><small>กดเพื่อดูสรุปทุกรายการ</small>`:`<span>ข้อมูลไม่ครบ ยังตรวจไม่ได้</span>`;};render=function(){_r.apply(this,arguments);try{window.scWebSummary();}catch(e){}sb();};try{window.scWebSummary();}catch(e){}sb();})();
 </script>
 <!-- ===== END โมดูลพิมพ์รายการคำนวณ ===== -->
 
