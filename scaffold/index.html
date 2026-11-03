@@ -1454,8 +1454,8 @@ async function shareDec(code){code=String(code||'').trim();const k=code.indexOf(
   try{let u;if(code[0]==='z'){if(typeof DecompressionStream!=='function')return null;u=await shareStream(unb64u(code.slice(1)),DecompressionStream);}else if(code[0]==='p')u=unb64u(code.slice(1));else u=unb64u(code);
    const o=JSON.parse(new TextDecoder().decode(u));return o&&typeof o==='object'&&o.s&&typeof o.s==='object'?o:null;}catch(e){return null;}}
 function shareApply(o){const cl=JSON.parse(JSON.stringify(o.s));Object.keys(cl).forEach(k=>{if(!/^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(k)||k==='__proto__'||k==='constructor'||k==='prototype')delete cl[k];});Object.assign(state,cl);if(state.supMode!=='none')state.supMode='check';
-  if(o.m&&typeof o.m==='object'){let m={};try{m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{};}catch(e){}['proj','site','by','lic'].forEach(k=>{if(typeof o.m[k]==='string')m[k]=o.m[k].slice(0,300);});try{localStorage.setItem(SHARE_META_KEY,JSON.stringify(m));}catch(e){}}return true;}
-function shareAfter(){state.mode='fix';applyPly();applyLeg();['j','b'].forEach(k=>{if(!/^p[0-9]$/.test(state[k+'Sec'])&&state[k+'Sec']!=='custom')state[k+'Sec']=DEFSEC[k];applyBox(k);});save();build();}
+  if(o.m&&typeof o.m==='object'){let m={};try{m=JSON.parse(localStorage.getItem(SHARE_META_KEY)||'{}')||{};}catch(e){}['proj','site','by','lic'].forEach(k=>{if(typeof o.m[k]==='string')m[k]=o.m[k].slice(0,300);});window.SHARE_MEM=Object.assign({},m);try{localStorage.setItem(SHARE_META_KEY,JSON.stringify(m));}catch(e){}}return true;}
+function shareAfter(){state.mode='fix';const hi=$s('scheighttarget');if(hi)hi._ready=false;scDefaults(true);applyPly();applyLeg();['j','b'].forEach(k=>{if(!/^p[0-9]$/.test(state[k+'Sec'])&&state[k+'Sec']!=='custom')state[k+'Sec']=DEFSEC[k];applyBox(k);});save();build();scBuildPanel();}
 function shareMsg(t,bad){const e=document.getElementById('shareMsg');if(e){e.textContent=t;e.style.color=bad?'var(--bad)':'var(--ok)';}}
 async function shareCopy(){let code;try{code=await shareEnc();}catch(e){shareMsg('สร้างลิงก์ไม่สำเร็จ',true);return;}
   const val=location.href.split('#')[0]+'#s='+code;
@@ -1543,7 +1543,7 @@ body.rpt-mode #rpt{display:block}
  const G=x=>{const s=Number(x);return Number.isFinite(s)?String(+s.toPrecision(7)):'?';};
  const C=x=>{const v=Number(x);return Number.isFinite(v)?v.toLocaleString('en-US',{maximumFractionDigits:2}):'?';};
  const rb=ok=>`<span class="rb ${ok?'ok':'bad'}">${ok?'✓ ผ่าน':'✗ ไม่ผ่าน'}</span>`;
- const loadMeta=()=>{try{return JSON.parse(localStorage.getItem(META_KEY)||'{}')||{};}catch(e){return {};}};
+ const loadMeta=()=>{let m={};try{m=JSON.parse(localStorage.getItem(META_KEY)||'{}')||{};}catch(e){}return Object.assign({},window.SHARE_MEM||{},m);};
  const saveMeta=m=>{try{localStorage.setItem(META_KEY,JSON.stringify(m));}catch(e){}};
 
  /* ---------- ภาพตัดขวางสำหรับพิมพ์: ทำสำเนา SVG ตัดปุ่ม/เมนูออก เปลี่ยนช่องกรอกเป็นตัวเลข ---------- */
