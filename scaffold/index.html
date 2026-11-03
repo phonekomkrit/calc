@@ -19,6 +19,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Sarabun","No
 details.calcd{margin-top:6px}details.calcd>summary::before{content:'▸';margin-right:6px}details.calcd[open]>summary::before{content:'▾'}
 details.calcd>summary{cursor:pointer;min-height:36px;display:flex;align-items:center;color:var(--accent);font-weight:700}
 @media print{#statusbar{display:none}}
+@media(max-width:640px){
+ .websum-wrap{}#websum .sumtbl,#websum .sumtbl tbody{display:block}#websum .sumtbl tr:first-child{display:none}
+ #websum .sumtbl tr{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 8px}
+ #websum .sumtbl td{display:block;border:0;padding:0;text-align:left}
+ #websum .sumtbl td.nm0{display:none}#websum .sumtbl td.nm{grid-column:1/-1;font-weight:700}
+ #websum .sumtbl td[data-l]::before{content:attr(data-l)': ';color:var(--mute);font-size:12px}
+ #websum .sumtbl td.rs{grid-column:1/-1}
+ #scsvg::before,#scoriginalsvg::before{content:'← เลื่อนซ้าย-ขวาเพื่อดูภาพทั้งหมด →';display:block;text-align:center;color:var(--mute);font-size:13px;margin-bottom:4px}
+}
 .sec{display:grid;grid-template-columns:minmax(0,1fr);gap:0 14px;align-items:start}
 .sec>.card{margin:12px 0}
 @media(min-width:980px){.wrap{max-width:1360px}.sec{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sec .resc{position:sticky;top:52px;max-height:calc(100vh - 60px);overflow:auto}}
@@ -1415,7 +1424,7 @@ function decorateResults(o,p){
    [p.js<=o.pL,`ตงห่างได้ไม่เกิน ${f(o.pL)} ซม. · ใช้ ${g(p.js)} ซม.`,`ลดระยะห่างตงให้ไม่เกิน ${Math.floor(o.pL*10)/10} ซม. หรือใช้ไม้อัดที่หนาขึ้น`],
    [o.jspan<=o.jL,`คานห่างได้ไม่เกิน ${f(o.jL)} ซม. · ใช้ ${g(o.jspan)} ซม.`,`ลดระยะห่างคาน/นั่งร้านให้ไม่เกิน ${Math.floor(o.jL*10)/10} ซม. หรือใช้ตงที่ใหญ่ขึ้น`],
    [p.ls<=o.bL,`ขาห่างได้ไม่เกิน ${f(o.bL)} ซม. · ใช้ ${g(p.ls)} ซม.`,`ลดระยะห่างขาให้ไม่เกิน ${Math.floor(o.bL*10)/10} ซม. หรือใช้คานที่ใหญ่ขึ้น`],
-   [o.P<=p.cap&&(none||o.P<=o.Vc),`แรงลงขา ${f(o.P,0)} กก. · ขารับได้ ${f(p.cap,0)} กก.`+(none?'':` · ทะลุพื้น ${f(o.Vc,0)} กก.`),(o.P>p.cap?`ลดพื้นที่รับน้ำหนักต่อขาเหลือไม่เกิน ${f(p.cap/(o.W*o.fr))} ตร.ม. (ตอนนี้ ${f(o.area)}) หรือใช้ขา/เฟรมที่รับได้มากขึ้น`:'')+(!none&&o.P>o.Vc?' เพิ่มแผ่นรองหรือความหนาพื้นที่รองรับ':'')]
+   [o.P<=p.cap&&(none||o.P<=o.Vc),`แรงลงขา ${f(o.P,0)} กก. · ขารับได้ ${f(p.cap,0)} กก.`+(none?'':` · ทะลุพื้น ${f(o.Vc,0)} กก.`),(o.P>p.cap?`ใช้ขา/เฟรมที่รับได้มากขึ้น หรือลดพื้นที่รับน้ำหนักต่อขาจาก ${f(o.area)} เหลือไม่เกิน ${f(p.cap/(o.W*o.fr))} ตร.ม. (ลดมากอาจไม่เหมาะสม) และตรวจว่าตัวเลือก "ลดกำลังตามการโก่งเดาะ" ตรงกับเฟรมจริงหรือไม่`:'')+(!none&&o.P>o.Vc?' เพิ่มแผ่นรองหรือความหนาพื้นที่รองรับ':'')]
   ];
   const wide=window.matchMedia&&matchMedia('(min-width:980px)').matches;
   R.forEach((r,i)=>{
@@ -1500,6 +1509,7 @@ function render(){
     out.innerHTML=`<div class="err">คำนวณไม่สำเร็จ<br><button onclick="build()">ลองใหม่</button></div>`;
   }
 }
+(function(){const c=document.getElementById('projcard');if(!c||!window.matchMedia)return;const h=c.querySelector('h2');if(!h)return;const d=document.createElement('details');d.className='projd';d.open=!matchMedia('(max-width:640px)').matches;const sm=document.createElement('summary');sm.style.cssText='cursor:pointer;font-weight:700;font-size:18px;min-height:40px;display:flex;align-items:center';sm.textContent='ข้อมูลโครงการ (ชื่อโครงการ ผู้คำนวณ ฯลฯ)';[...c.children].filter(e=>e!==h).forEach(e=>d.appendChild(e));h.remove();d.prepend(sm);c.appendChild(d);})();
 (function(){const q=document.getElementById('qrimg');if(!q)return;const close=()=>{const z=document.getElementById('qrzoom');if(z)z.remove();};q.addEventListener('click',()=>{close();const z=document.createElement('div');z.id='qrzoom';z.className='qrzoom noprint';z.setAttribute('role','dialog');z.setAttribute('aria-label','QR code ขยาย กดเพื่อปิด');z.innerHTML='<img src="'+q.src+'" alt="QR code ขยาย">';z.addEventListener('click',close);document.body.appendChild(z);});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});})();
 document.addEventListener('wheel',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&t.type==='number'&&document.activeElement===t)t.blur();},{passive:true});
 /* ===== ช่องรับความเห็น: เปิด Google Form (ถ้ามีลิงก์แบบกรอกล่วงหน้า ให้ใส่แทน FEEDBACK_FORM_URL) ===== */
@@ -1710,7 +1720,7 @@ body.rpt-mode #rpt{display:block}
   const chk=checks(state,compute(state,state.mode)),nBad=chk.filter(c=>!c.ok).length;
   box.innerHTML=`<h2>สรุปผลการตรวจ ${nBad?`<span class="rb bad">✗ ไม่ผ่าน ${nBad} รายการ</span>`:'<span class="rb ok">✓ ผ่านทุกรายการ</span>'}</h2>${state.supMode==='none'?'<div class="warnbox" style="margin:0 0 8px;padding:8px 12px">ไม่ได้ตรวจฐานรองรับ (ดิน/พื้นคอนกรีต) ต้องตรวจเองก่อนใช้งาน</div>':''}
   <div class="warnbox" style="margin:8px 0;padding:8px 12px"><b>ขอบเขตการตรวจ</b>ไม่ได้ตรวจแรงด้านข้าง การค้ำยัน/เสถียรภาพของโครงนั่งร้าน ลม การทรุดตัวของฐาน และการโก่งเฉพาะที่ของเหล็กผนังบาง ต้องให้วิศวกรตรวจเพิ่มก่อนใช้งานจริง</div>
-  <div class="sumwrap"><table class="sumtbl"><tr><th>#</th><th class="l">รายการตรวจ</th><th>ค่าที่ใช้</th><th>เกณฑ์ที่ยอมให้</th><th>อัตราส่วน</th><th>ผล</th></tr>${chk.map((c,i)=>`<tr><td class="c">${i+1}</td><td class="l">${c.n}</td><td>${c.d}</td><td>${c.a}</td><td>${c.r===null?'–':N(c.r)}</td><td class="c">${c.info?'–':rb(c.ok)}</td></tr>`).join('')}</table></div>`;
+  <div class="sumwrap"><table class="sumtbl"><tr><th>#</th><th class="l">รายการตรวจ</th><th>ค่าที่ใช้</th><th>เกณฑ์ที่ยอมให้</th><th>อัตราส่วน</th><th>ผล</th></tr>${chk.map((c,i)=>`<tr><td class="c nm0">${i+1}</td><td class="l nm">${c.n}</td><td data-l="ค่าที่ใช้">${c.d}</td><td data-l="เกณฑ์ที่ยอมให้">${c.a}</td><td data-l="อัตราส่วน">${c.r===null?'–':N(c.r)}</td><td class="c rs" data-l="ผล">${c.info?'–':rb(c.ok)}</td></tr>`).join('')}</table></div>`;
  }
  window.scWebSummary=webSummary;
  function build(){
